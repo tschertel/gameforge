@@ -123,7 +123,7 @@ type convTab struct {
 
 func newConvTabs() []*convTab {
 	var tabs []*convTab
-	for _, c := range []*converter{chdConverter, sevenZipConverter} {
+	for _, c := range []*converter{chdConverter, sevenZipConverter, pkgConverter} {
 		tabs = append(tabs, &convTab{conv: c, checked: map[string]bool{}})
 	}
 	return tabs
