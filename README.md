@@ -184,7 +184,7 @@ In the **PKG** tab, `.pkg` files are listed with their platform, name, kind (gam
 - **Rename…** gives the checked packages their standard names: `Game [CUSA00001][v1.00].pkg`, `Game [CUSA00001][Update][v1.05].pkg`, `DLC name [CUSA00001][DLC][LABEL].pkg`. Shows the changes before renaming.
 - **Extract** writes each checked package into a folder named the same way.
   - **PS3, PSP and PS Vita**: the data of retail packages is encrypted with the platform's PKG key. GameForge contains no keys: put your own in `keys/pkg.keys`, one per line (`ps3 = …`, `psp = …`, `vita2 = …`, `vita3 = …`, `vita4 = …`, 32 hexadecimal digits each), and click **Reload**. Without the key, a package shows only what its header says (content ID, platform, kind) and which key it needs. Debug packages, as most homebrew is built, need no key. The extracted files are the ones the console installs; files that are themselves protected (NPDRM SELF/EDAT on the PS3, Vita apps) stay as they are.
-  - **PS4**: the header, the `PARAM.SFO` and the icon are not encrypted, so every PS4 package is listed and renamed without keys. The game itself is a PFS image encrypted with keys that only the console has, so **Extract** writes only the unencrypted system files to `sce_sys/` (`param.sfo`, `icon0.png`, `pic0.png`/`pic1.png`, `changeinfo/`, PlayGo data…).
+  - **PS4**: the header, the `PARAM.SFO` and the icon are not encrypted, so every PS4 package is listed and renamed without keys. The game itself is a PFS image encrypted with AES-XTS. In a **fake package** (fPKG), as homebrew and the PS4 scene's PKG tools build them, its key comes from the package's passcode, which is all zeros: GameForge derives it and **Extract** writes every file of the game, decompressing what is compressed (PFSC), plus the package's own system files in `sce_sys/`. The list says "fake package (fPKG)" for these. For retail packages from PSN, and fake ones built with another passcode, the key is not known, so **Extract** writes only the unencrypted system files to `sce_sys/` (`param.sfo`, `icon0.png`, `pic0.png`/`pic1.png`, `changeinfo/`, PlayGo data…).
 
 ## Usage
 
@@ -344,6 +344,12 @@ CHDMAN=/path/to/chdman.exe go test ./internal/chd -run Chdman -v
 ```
 
 It converts the same images with the app and with `chdman`, runs `chdman verify` on the app's CHD, compares the data SHA-1 and the overall SHA-1, checks that `chdman extractcd`/`extractdvd` returns identical images and that the app reads `chdman`'s CHDs (codecs `cdfl`, `huff` and `flac`). There is also a round-trip test of the FLAC encoder/decoder.
+
+The PKG tab has tests with synthetic PS4, PS3, PSP and Vita packages, and a test that builds real fake PS4 packages with [LibOrbisPkg](https://github.com/maxton/LibOrbisPkg)'s PkgTool and extracts them, which runs only when the `PKGTOOL` variable points to `PkgTool.exe` or `PkgTool.Core.exe`:
+
+```bash
+PKGTOOL=/path/to/PkgTool.Core.exe go test ./internal/pkg -run FakePKG -v
+```
 
 The RVZ conversion is tested with a synthetic GameCube disc (files, file table and generator padding with one seed per 32 KiB block) and a synthetic Wii disc (partition table, ticket with the title key encrypted with a test common key, data with an FST, files and padding, a hash tree with some hashes altered to require exceptions, AES encryption): seed recovery at several positions, byte-for-byte round trip, final size, and the errors with no key and with a wrong key. A compatibility test with Dolphin runs when the `DOLPHINTOOL` variable points to `DolphinTool.exe` (which comes with Dolphin for Windows):
 

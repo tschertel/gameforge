@@ -184,7 +184,7 @@ Na aba **PKG**, arquivos `.pkg` são listados com plataforma, nome, tipo (jogo, 
 - **Renomear…** dá aos pacotes marcados o nome padrão: `Jogo [CUSA00001][v1.00].pkg`, `Jogo [CUSA00001][Update][v1.05].pkg`, `Nome da DLC [CUSA00001][DLC][LABEL].pkg`. Mostra as mudanças antes de renomear.
 - **Extrair** grava cada pacote marcado numa pasta com o mesmo nome.
   - **PS3, PSP e PS Vita**: os dados dos pacotes retail são cifrados com a chave de PKG da plataforma. O GameForge não contém chaves: coloque as suas em `keys/pkg.keys`, uma por linha (`ps3 = …`, `psp = …`, `vita2 = …`, `vita3 = …`, `vita4 = …`, 32 dígitos hexadecimais cada), e clique em **Recarregar**. Sem a chave, o pacote mostra só o que o cabeçalho diz (content ID, plataforma, tipo) e qual chave ele precisa. Pacotes debug, como é feita a maioria dos homebrews, não precisam de chave. Os arquivos extraídos são os que o console instala; arquivos que são protegidos por si (NPDRM SELF/EDAT no PS3, apps do Vita) ficam como estão.
-  - **PS4**: o cabeçalho, o `PARAM.SFO` e o ícone não são cifrados, então todo pacote de PS4 é listado e renomeado sem chaves. O jogo em si é uma imagem PFS cifrada com chaves que só o console tem, então **Extrair** grava só os arquivos de sistema não cifrados em `sce_sys/` (`param.sfo`, `icon0.png`, `pic0.png`/`pic1.png`, `changeinfo/`, dados PlayGo…).
+  - **PS4**: o cabeçalho, o `PARAM.SFO` e o ícone não são cifrados, então todo pacote de PS4 é listado e renomeado sem chaves. O jogo em si é uma imagem PFS cifrada com AES-XTS. Num **pacote fake** (fPKG), como os homebrews e as ferramentas de PKG da cena do PS4 os fazem, a chave vem da senha (passcode) do pacote, que é toda zeros: o GameForge a deriva e **Extrair** grava todos os arquivos do jogo, descomprimindo o que estiver comprimido (PFSC), mais os arquivos de sistema do próprio pacote em `sce_sys/`. A lista diz "pacote fake (fPKG)" para esses. Para pacotes retail da PSN, e fakes feitos com outra senha, a chave não é conhecida, então **Extrair** grava só os arquivos de sistema não cifrados em `sce_sys/` (`param.sfo`, `icon0.png`, `pic0.png`/`pic1.png`, `changeinfo/`, dados PlayGo…).
 
 ## Uso
 
@@ -345,6 +345,12 @@ CHDMAN=/caminho/para/chdman.exe go test ./internal/chd -run Chdman -v
 ```
 
 Ele converte as mesmas imagens com o app e com o `chdman`, roda `chdman verify` no CHD do app, compara o SHA-1 dos dados e o SHA-1 geral, confere que `chdman extractcd`/`extractdvd` devolve imagens idênticas e que o app lê os CHDs do `chdman` (codecs `cdfl`, `huff` e `flac`). Há também um teste de ida e volta do codificador/decodificador FLAC.
+
+A aba PKG tem testes com pacotes sintéticos de PS4, PS3, PSP e Vita, e um teste que cria pacotes fake de PS4 reais com o PkgTool do [LibOrbisPkg](https://github.com/maxton/LibOrbisPkg) e os extrai, que só roda quando a variável `PKGTOOL` aponta para o `PkgTool.exe` ou `PkgTool.Core.exe`:
+
+```bash
+PKGTOOL=/caminho/para/PkgTool.Core.exe go test ./internal/pkg -run FakePKG -v
+```
 
 A conversão RVZ é testada com um disco de GameCube sintético (arquivos, tabela de arquivos e preenchimento do gerador com uma semente por bloco de 32 KiB) e um disco de Wii sintético (tabela de partições, ticket com a chave do título criptografada por uma chave comum de teste, dados com FST, arquivos e preenchimento, árvore de hashes com algumas hashes alteradas para exigir exceções, criptografia AES): a recuperação da semente em várias posições, a ida e volta byte a byte, o tamanho final e os erros sem chave e com chave errada. Um teste de compatibilidade com o Dolphin roda quando a variável `DOLPHINTOOL` aponta para o `DolphinTool.exe` (que vem no Dolphin para Windows):
 

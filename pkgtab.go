@@ -86,6 +86,8 @@ func (d pkgDetail) String() string {
 	switch {
 	case p.NeedKey != "":
 		parts = append(parts, T("pkg.need_key", p.NeedKey))
+	case p.Fake:
+		parts = append(parts, T("pkg.fake", p.Files))
 	case p.Platform == "PS4":
 		parts = append(parts, T("pkg.ps4_sys", p.Files))
 	case p.Debug:

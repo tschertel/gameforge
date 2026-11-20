@@ -1,6 +1,7 @@
 # Build output
 gameforge
 gameforge.exe
+gameforge.exe~
 
 # Personal files written next to the program
 gameforge.json

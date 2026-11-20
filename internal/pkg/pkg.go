@@ -32,6 +32,8 @@ type Package struct {
 	// Debug is a PS3/PSP/Vita package made with a debug (not retail) key,
 	// which needs no key file.
 	Debug bool
+	// Fake is a PS4 fake package (fPKG): its game files can be extracted.
+	Fake bool
 	// NeedKey names the key in pkg.keys that the package needs but that is
 	// not loaded; then only the header is read.
 	NeedKey string

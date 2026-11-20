@@ -1309,11 +1309,11 @@ var messages = map[string]msg{
 	// PKG tab.
 	"tab.pkg": {"PKG", "PKG", "PKG", "PKG", "PKG"},
 	"tab.pkg.info": {
-		"Lists PlayStation packages (.pkg) of the PS4, PS3, PSP and PS Vita with their name, ID and version, renames them and extracts them to folders. PS3, PSP and Vita packages are decrypted with your own keys in keys/pkg.keys (debug and homebrew packages need none); without them only the header is read. From a PS4 package only the unencrypted system files (sce_sys: PARAM.SFO, icons, PlayGo data…) are extracted: the game itself is encrypted with keys that only the console has.",
-		"Lista pacotes PlayStation (.pkg) do PS4, PS3, PSP e PS Vita com nome, ID e versão, renomeia e extrai para pastas. Pacotes de PS3, PSP e Vita são decifrados com suas próprias chaves em keys/pkg.keys (pacotes debug e homebrew não precisam); sem elas, só o cabeçalho é lido. De um pacote de PS4 só os arquivos de sistema não cifrados (sce_sys: PARAM.SFO, ícones, dados PlayGo…) são extraídos: o jogo em si é cifrado com chaves que só o console tem.",
-		"Listet PlayStation-Pakete (.pkg) von PS4, PS3, PSP und PS Vita mit Name, ID und Version auf, benennt sie um und entpackt sie in Ordner. PS3-, PSP- und Vita-Pakete werden mit deinen eigenen Schlüsseln in keys/pkg.keys entschlüsselt (Debug- und Homebrew-Pakete brauchen keine); ohne sie wird nur der Kopf gelesen. Aus einem PS4-Paket werden nur die unverschlüsselten Systemdateien (sce_sys: PARAM.SFO, Symbole, PlayGo-Daten…) entpackt: das Spiel selbst ist mit Schlüsseln verschlüsselt, die nur die Konsole hat.",
-		"Liste les paquets PlayStation (.pkg) de la PS4, PS3, PSP et PS Vita avec leur nom, ID et version, les renomme et les extrait dans des dossiers. Les paquets PS3, PSP et Vita sont déchiffrés avec vos propres clés dans keys/pkg.keys (les paquets debug et homebrew n'en ont pas besoin) ; sans elles, seul l'en-tête est lu. D'un paquet PS4, seuls les fichiers système non chiffrés (sce_sys : PARAM.SFO, icônes, données PlayGo…) sont extraits : le jeu lui-même est chiffré avec des clés que seule la console possède.",
-		"Lista paquetes PlayStation (.pkg) de PS4, PS3, PSP y PS Vita con su nombre, ID y versión, los renombra y los extrae a carpetas. Los paquetes de PS3, PSP y Vita se descifran con tus propias claves en keys/pkg.keys (los paquetes debug y homebrew no las necesitan); sin ellas solo se lee la cabecera. De un paquete de PS4 solo se extraen los archivos de sistema sin cifrar (sce_sys: PARAM.SFO, iconos, datos PlayGo…): el juego en sí está cifrado con claves que solo tiene la consola.",
+		"Lists PlayStation packages (.pkg) of the PS4, PS3, PSP and PS Vita with their name, ID and version, renames them and extracts them to folders. PS3, PSP and Vita packages are decrypted with your own keys in keys/pkg.keys (debug and homebrew packages need none); without them only the header is read. PS4 fake packages (fPKG, as homebrew is built) are extracted in full; from other PS4 packages only the unencrypted system files (sce_sys: PARAM.SFO, icons, PlayGo data…) are extracted: their game data is encrypted with keys that only the console has.",
+		"Lista pacotes PlayStation (.pkg) do PS4, PS3, PSP e PS Vita com nome, ID e versão, renomeia e extrai para pastas. Pacotes de PS3, PSP e Vita são decifrados com suas próprias chaves em keys/pkg.keys (pacotes debug e homebrew não precisam); sem elas, só o cabeçalho é lido. Pacotes fake de PS4 (fPKG, como são feitos os homebrews) são extraídos por inteiro; dos outros pacotes de PS4 só os arquivos de sistema não cifrados (sce_sys: PARAM.SFO, ícones, dados PlayGo…) são extraídos: os dados do jogo são cifrados com chaves que só o console tem.",
+		"Listet PlayStation-Pakete (.pkg) von PS4, PS3, PSP und PS Vita mit Name, ID und Version auf, benennt sie um und entpackt sie in Ordner. PS3-, PSP- und Vita-Pakete werden mit deinen eigenen Schlüsseln in keys/pkg.keys entschlüsselt (Debug- und Homebrew-Pakete brauchen keine); ohne sie wird nur der Kopf gelesen. PS4-Fake-Pakete (fPKG, wie Homebrew gebaut wird) werden vollständig entpackt; aus anderen PS4-Paketen nur die unverschlüsselten Systemdateien (sce_sys: PARAM.SFO, Symbole, PlayGo-Daten…): ihre Spieldaten sind mit Schlüsseln verschlüsselt, die nur die Konsole hat.",
+		"Liste les paquets PlayStation (.pkg) de la PS4, PS3, PSP et PS Vita avec leur nom, ID et version, les renomme et les extrait dans des dossiers. Les paquets PS3, PSP et Vita sont déchiffrés avec vos propres clés dans keys/pkg.keys (les paquets debug et homebrew n'en ont pas besoin) ; sans elles, seul l'en-tête est lu. Les paquets fake PS4 (fPKG, comme sont faits les homebrews) sont extraits en entier ; des autres paquets PS4, seuls les fichiers système non chiffrés (sce_sys : PARAM.SFO, icônes, données PlayGo…) sont extraits : leurs données de jeu sont chiffrées avec des clés que seule la console possède.",
+		"Lista paquetes PlayStation (.pkg) de PS4, PS3, PSP y PS Vita con su nombre, ID y versión, los renombra y los extrae a carpetas. Los paquetes de PS3, PSP y Vita se descifran con tus propias claves en keys/pkg.keys (los paquetes debug y homebrew no las necesitan); sin ellas solo se lee la cabecera. Los paquetes fake de PS4 (fPKG, como se hacen los homebrews) se extraen enteros; de los demás paquetes de PS4 solo se extraen los archivos de sistema sin cifrar (sce_sys: PARAM.SFO, iconos, datos PlayGo…): sus datos de juego están cifrados con claves que solo tiene la consola.",
 	},
 	"btn.pkg": {"Extract", "Extrair", "Entpacken", "Extraire", "Extraer"},
 	"btn.pkg.tip": {
@@ -1359,6 +1359,13 @@ var messages = map[string]msg{
 		"%d Systemdateien (die Spieldaten sind verschlüsselt)",
 		"%d fichiers système (les données du jeu sont chiffrées)",
 		"%d archivos de sistema (los datos del juego están cifrados)",
+	},
+	"pkg.fake": {
+		"fake package (fPKG): %d files",
+		"pacote fake (fPKG): %d arquivos",
+		"Fake-Paket (fPKG): %d Dateien",
+		"paquet fake (fPKG) : %d fichiers",
+		"paquete fake (fPKG): %d archivos",
 	},
 	"pkg.debug":       {"debug package", "pacote debug", "Debug-Paket", "paquet debug", "paquete debug"},
 	"pkg.kind.game":   {"Game", "Jogo", "Spiel", "Jeu", "Juego"},

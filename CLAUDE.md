@@ -11,6 +11,7 @@ The user writes in Brazilian Portuguese; answer in Portuguese. Code, comments, c
 - Tests: `go vet ./... && go test ./...`. Optional tests run when an environment variable is set:
   - `SEVENZIP` points to `7z.exe` (7-Zip compatibility);
   - `CHDMAN` points to `chdman`;
+  - `PKGTOOL` points to LibOrbisPkg's `PkgTool.exe` (or `PkgTool.Core.exe`), which builds real fake PS4 PKGs for the PFS extraction test;
   - `REDUMP_DATS` and `NOINTRO_DATS` point to folders of real `.dat` files.
 - Tk's dialog patches (Tcl run through `eval.Eval`) cannot be tested with `go test`: only the main package may initialize the eval extension. To check them, use a temporary file with `//go:build probe` holding an `init()` in package main, build with `-tags probe`, and delete the file afterwards.
 - After building or probing, do not leave the app running; the user starts it from their own terminal and tests it themselves before a release.

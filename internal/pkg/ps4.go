@@ -15,8 +15,9 @@ import (
 // A PS4 PKG (big-endian) starts with a header that holds the content ID
 // and points to a table of entries: the package's own files (PARAM.SFO,
 // icons, PlayGo data, licences…), some of them encrypted. The game itself
-// is a PFS image after them, encrypted with keys that only the console
-// has, so only the unencrypted entries are extracted.
+// is a PFS image after them (see pfs.go): fake packages are extracted in
+// full; of retail ones, whose PFS key only the console has, only the
+// unencrypted entries are.
 
 const (
 	ps4EntryNames = 0x0200
@@ -34,6 +35,12 @@ type ps4Entry struct {
 type ps4Pkg struct {
 	entries []ps4Entry // the unencrypted entries with a name
 	total   int64
+
+	// The game's PFS image, when its key is known (a fake package).
+	pfsOffset, pfsSize int64
+	ek                 []byte
+	pfsFiles           int
+	pfsTotal           int64
 }
 
 // ps4Names names the entries by ID, as the console installs them in
@@ -159,6 +166,100 @@ func (p *Package) openPS4(f io.ReaderAt) error {
 	p.ps4 = pk
 	p.Files = len(pk.entries)
 	p.Kind = ps4Kind(p.SFO["CATEGORY"], be.Uint32(h[0x74:]))
+
+	// The PFS image: offset and size at 0x410 of the extended header.
+	var x [16]byte
+	if _, err := f.ReadAt(x[:], 0x410); err == nil {
+		pk.pfsOffset, pk.pfsSize = int64(be.Uint64(x[0:])), int64(be.Uint64(x[8:]))
+	}
+	if pk.pfsSize > 0 && pk.pfsOffset+pk.pfsSize <= p.Size {
+		ek := ekpfs(p.ContentID, DefaultPasscode)
+		if inner, err := pk.inner(f, ek); err == nil {
+			err = inner.walk(inner.uroot, "", func(_ string, ino int, size int64) {
+				if size >= 0 {
+					pk.pfsFiles++
+					pk.pfsTotal += size
+				}
+			})
+			if err == nil {
+				pk.ek = ek
+				p.Fake = true
+				p.Files = pk.pfsFiles
+			} else {
+				pk.pfsFiles, pk.pfsTotal = 0, 0
+			}
+		}
+	}
+	return nil
+}
+
+// innerImage is the inner PFS image of a package and its uroot folder.
+type innerImage struct {
+	*pfsImage
+	uroot int
+}
+
+// inner opens the outer PFS image with the EKPFS ek, then the inner one.
+func (pk *ps4Pkg) inner(f io.ReaderAt, ek []byte) (*innerImage, error) {
+	outer, err := openPFS(io.NewSectionReader(f, pk.pfsOffset, pk.pfsSize), pk.pfsSize, ek)
+	if err != nil {
+		return nil, err
+	}
+	root, err := outer.lookup(0, "uroot")
+	if err != nil {
+		return nil, err
+	}
+	dat, err := outer.lookup(root.ino, "pfs_image.dat")
+	if err != nil {
+		return nil, err
+	}
+	r, size, err := outer.open(dat.ino)
+	if err != nil {
+		return nil, err
+	}
+	img, err := openPFS(r, size, nil)
+	if err != nil {
+		return nil, fmt.Errorf("inner %w", err)
+	}
+	u, err := img.lookup(0, "uroot")
+	if err != nil {
+		return nil, err
+	}
+	return &innerImage{img, u.ino}, nil
+}
+
+// walk calls fn for each file under a folder, with its path, inode and
+// size, and for each folder with size -1.
+func (img *innerImage) walk(dir int, prefix string, fn func(path string, ino int, size int64)) error {
+	return img.walkDepth(dir, prefix, fn, 0)
+}
+
+func (img *innerImage) walkDepth(dir int, prefix string, fn func(string, int, int64), depth int) error {
+	if depth > 64 {
+		return errors.New("PFS: folders too deep")
+	}
+	ents, err := img.readDir(dir)
+	if err != nil {
+		return err
+	}
+	for _, e := range ents {
+		path := prefix + e.name
+		if e.typ == 3 {
+			fn(path, e.ino, -1)
+			if err := img.walkDepth(e.ino, path+"/", fn, depth+1); err != nil {
+				return err
+			}
+			continue
+		}
+		if e.ino < 0 || e.ino >= len(img.inodes) {
+			return fmt.Errorf("PFS: %s: bad inode", path)
+		}
+		_, size, err := img.open(e.ino)
+		if err != nil {
+			return fmt.Errorf("%s: %w", path, err)
+		}
+		fn(path, e.ino, size)
+	}
 	return nil
 }
 
@@ -184,14 +285,67 @@ func ps4Kind(category string, contentType uint32) string {
 	return KindOther
 }
 
-// extract writes the named, unencrypted entries into dir/sce_sys.
+// extract writes the game's files (fake packages) and the named,
+// unencrypted entries into dir/sce_sys, without replacing the game's own.
 func (pk *ps4Pkg) extract(ctx context.Context, f *os.File, dir string, progress func(done, total int64)) (int64, error) {
-	sys := filepath.Join(dir, "sce_sys")
 	var done int64
+	total := pk.total + pk.pfsTotal
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return 0, err
+	}
+	if pk.ek != nil {
+		img, err := pk.inner(f, pk.ek)
+		if err != nil {
+			return 0, err
+		}
+		var files []struct {
+			name string
+			ino  int
+			dir  bool
+		}
+		err = img.walk(img.uroot, "", func(name string, ino int, size int64) {
+			files = append(files, struct {
+				name string
+				ino  int
+				dir  bool
+			}{name, ino, size < 0})
+		})
+		if err != nil {
+			return 0, err
+		}
+		for _, fl := range files {
+			out, err := safePath(dir, fl.name)
+			if err != nil {
+				return done, err
+			}
+			if fl.dir {
+				if err := os.MkdirAll(out, 0o755); err != nil {
+					return done, err
+				}
+				continue
+			}
+			r, size, err := img.open(fl.ino)
+			if err != nil {
+				return done, fmt.Errorf("%s: %w", fl.name, err)
+			}
+			if err := writeFile(ctx, out, io.NewSectionReader(r, 0, size), size, func(k int64) {
+				done += k
+				progress(done, total)
+			}); err != nil {
+				return done, fmt.Errorf("%s: %w", fl.name, err)
+			}
+		}
+	}
+	sys := filepath.Join(dir, "sce_sys")
 	for _, e := range pk.entries {
 		out, err := safePath(sys, e.name)
 		if err != nil {
 			return done, err
+		}
+		if _, err := os.Stat(out); err == nil {
+			done += int64(e.size) // the game's own copy
+			progress(done, total)
+			continue
 		}
 		if err := os.MkdirAll(filepath.Dir(out), 0o755); err != nil {
 			return done, err
@@ -203,7 +357,7 @@ func (pk *ps4Pkg) extract(ctx context.Context, f *os.File, dir string, progress 
 		r := io.NewSectionReader(f, int64(e.offset), int64(e.size))
 		err = copyN(ctx, w, r, int64(e.size), func(k int64) {
 			done += k
-			progress(done, pk.total)
+			progress(done, total)
 		})
 		if cerr := w.Close(); err == nil {
 			err = cerr
@@ -213,4 +367,20 @@ func (pk *ps4Pkg) extract(ctx context.Context, f *os.File, dir string, progress 
 		}
 	}
 	return done, nil
+}
+
+// writeFile copies size bytes of r to a new file.
+func writeFile(ctx context.Context, path string, r io.Reader, size int64, report func(int64)) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	w, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	err = copyN(ctx, w, r, size, report)
+	if cerr := w.Close(); err == nil {
+		err = cerr
+	}
+	return err
 }
