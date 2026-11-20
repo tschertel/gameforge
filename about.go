@@ -54,8 +54,9 @@ import (
 // and keeps one version of each game by region (1G1R), 2.18.0 adds the
 // PKG tab: PS4, PS3, PSP and PS Vita packages, with their names, icons
 // and versions, renaming, and extraction (PS3, PSP and Vita with the
-// user's own keys; PS4 fake packages in full, other PS4 packages only
-// their system files).
+// user's own keys; PS4 fake packages in full, with the default passcode
+// or the user's own PS4 keysets, other PS4 packages only their system
+// files).
 const appVersion = "2.18.0"
 
 // repoURL is the project's page, with the source code and the releases.

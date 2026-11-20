@@ -63,7 +63,7 @@ func Open(path string, keys *Keys) (*Package, error) {
 	p := &Package{Path: path, Size: st.Size()}
 	switch string(magic[:]) {
 	case "\x7fCNT":
-		err = p.openPS4(f)
+		err = p.openPS4(f, keys)
 	case "\x7fPKG":
 		err = p.openPS3(f, keys)
 	default:

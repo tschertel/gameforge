@@ -13,7 +13,9 @@ import (
 )
 
 // TestFakePKG builds fake PS4 packages with LibOrbisPkg's PkgTool (set
-// PKGTOOL to PkgTool.exe or PkgTool.Core.exe) and extracts them.
+// PKGTOOL to PkgTool.exe or PkgTool.Core.exe) and extracts them. If PS4KEYS
+// points to a pkg.keys with the PS4 keysets, a package with another
+// passcode is extracted with them too.
 func TestFakePKG(t *testing.T) {
 	tool := os.Getenv("PKGTOOL")
 	if tool == "" {
@@ -33,10 +35,23 @@ func TestFakePKG(t *testing.T) {
 		files[fmt.Sprintf("many/file_with_a_rather_long_name_%03d.txt", i)] = []byte(strings.Repeat("x", i))
 	}
 
+	var keys *Keys
+	if k := os.Getenv("PS4KEYS"); k != "" {
+		var err error
+		if keys, err = LoadKeys(k); err != nil || !keys.ps4() {
+			t.Fatalf("PS4KEYS: %v", err)
+		}
+	}
 	for _, tc := range []struct {
 		passcode string
 		fake     bool
-	}{{DefaultPasscode, true}, {"0123456789ABCDEFGHIJKLMNOPQRSTUV", false}} {
+		keys     *Keys
+	}{
+		{DefaultPasscode, true, nil},
+		{"0123456789ABCDEFGHIJKLMNOPQRSTUV", false, nil},
+		{"0123456789ABCDEFGHIJKLMNOPQRSTUV", keys != nil, keys},
+		{DefaultPasscode, keys != nil, keys},
+	} {
 		dir := t.TempDir()
 		proj := filepath.Join(dir, "proj")
 		run := func(args ...string) {
@@ -91,7 +106,7 @@ func TestFakePKG(t *testing.T) {
 		run("pkg_build", "p.gp4", "out")
 		path := filepath.Join(dir, "out", "UP0000-TEST00000_00-0000000000000000.pkg")
 
-		p, err := Open(path, nil)
+		p, err := Open(path, tc.keys)
 		if err != nil {
 			t.Fatal(err)
 		}

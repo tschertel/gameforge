@@ -3,10 +3,14 @@ package pkg
 import (
 	"bytes"
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/sha256"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"os"
 	"path/filepath"
 	"strings"
@@ -89,7 +93,7 @@ func ps4Name(id uint32) string {
 	return ""
 }
 
-func (p *Package) openPS4(f io.ReaderAt) error {
+func (p *Package) openPS4(f io.ReaderAt, keys *Keys) error {
 	var h [0x80]byte
 	if _, err := f.ReadAt(h[:], 0); err != nil {
 		return errors.New("PS4 PKG: header too short")
@@ -173,8 +177,20 @@ func (p *Package) openPS4(f io.ReaderAt) error {
 		pk.pfsOffset, pk.pfsSize = int64(be.Uint64(x[0:])), int64(be.Uint64(x[8:]))
 	}
 	if pk.pfsSize > 0 && pk.pfsOffset+pk.pfsSize <= p.Size {
-		ek := ekpfs(p.ContentID, DefaultPasscode)
-		if inner, err := pk.inner(f, ek); err == nil {
+		// The EKPFS: unwrapped with the user's PS4 keysets (any fake
+		// package), or else derived from the default passcode.
+		var cands [][]byte
+		if keys.ps4() {
+			if ek, err := unwrapEKPFS(f, all, raw, keys); err == nil {
+				cands = append(cands, ek)
+			}
+		}
+		cands = append(cands, ekpfs(p.ContentID, DefaultPasscode))
+		for _, ek := range cands {
+			inner, err := pk.inner(f, ek)
+			if err != nil {
+				continue
+			}
 			err = inner.walk(inner.uroot, "", func(_ string, ino int, size int64) {
 				if size >= 0 {
 					pk.pfsFiles++
@@ -185,9 +201,9 @@ func (p *Package) openPS4(f io.ReaderAt) error {
 				pk.ek = ek
 				p.Fake = true
 				p.Files = pk.pfsFiles
-			} else {
-				pk.pfsFiles, pk.pfsTotal = 0, 0
+				break
 			}
+			pk.pfsFiles, pk.pfsTotal = 0, 0
 		}
 	}
 	return nil
@@ -383,4 +399,70 @@ func writeFile(ctx context.Context, path string, r io.Reader, size int64, report
 		err = cerr
 	}
 	return err
+}
+
+// unwrapEKPFS unwraps the EKPFS of a fake package with the user's PS4
+// keysets: key slot 3 of the entry keys (0x10) gives dk3 (RSA, "derived
+// key 3" keyset); the SHA-256 of the image key's table record and dk3 is
+// the IV and key that decrypt the image key (0x20, AES-128-CBC), which
+// gives the EKPFS (RSA, "fake" keyset).
+func unwrapEKPFS(f io.ReaderAt, all []ps4Entry, table []byte, keys *Keys) ([]byte, error) {
+	var entryKeys, imageKey = -1, -1
+	for i, e := range all {
+		switch e.id {
+		case 0x0010:
+			entryKeys = i
+		case 0x0020:
+			imageKey = i
+		}
+	}
+	if entryKeys < 0 || imageKey < 0 || all[entryKeys].size < 0x500 || all[imageKey].size < 256 {
+		return nil, errors.New("no image key")
+	}
+	slot := make([]byte, 256)
+	if _, err := f.ReadAt(slot, int64(all[entryKeys].offset)+32+7*32+3*256); err != nil {
+		return nil, err
+	}
+	dk3, err := rsaDecrypt(slot, keys.Get("ps4_dk3_n"), keys.Get("ps4_dk3_d"))
+	if err != nil {
+		return nil, fmt.Errorf("dk3: %w", err)
+	}
+	h := sha256.New()
+	h.Write(table[imageKey*32 : imageKey*32+32])
+	h.Write(dk3)
+	ivKey := h.Sum(nil)
+	img := make([]byte, 256)
+	if _, err := f.ReadAt(img, int64(all[imageKey].offset)); err != nil {
+		return nil, err
+	}
+	b, _ := aes.NewCipher(ivKey[16:])
+	cipher.NewCBCDecrypter(b, ivKey[:16]).CryptBlocks(img, img)
+	ek, err := rsaDecrypt(img, keys.Get("ps4_fake_n"), keys.Get("ps4_fake_d"))
+	if err != nil {
+		return nil, fmt.Errorf("image key: %w", err)
+	}
+	if len(ek) != 32 {
+		return nil, errors.New("image key: wrong size")
+	}
+	return ek, nil
+}
+
+// rsaDecrypt decrypts an RSA block with PKCS #1 v1.5 padding, from the
+// modulus and private exponent alone.
+func rsaDecrypt(c, n, d []byte) ([]byte, error) {
+	N := new(big.Int).SetBytes(n)
+	C := new(big.Int).SetBytes(c)
+	if N.Sign() == 0 || C.Cmp(N) >= 0 {
+		return nil, errors.New("bad RSA input")
+	}
+	m := new(big.Int).Exp(C, new(big.Int).SetBytes(d), N).FillBytes(make([]byte, len(n)))
+	// 00 02 <nonzero padding> 00 <message>
+	if m[0] != 0 || m[1] != 2 {
+		return nil, errors.New("wrong key")
+	}
+	i := bytes.IndexByte(m[2:], 0)
+	if i < 8 {
+		return nil, errors.New("wrong key")
+	}
+	return m[2+i+1:], nil
 }
