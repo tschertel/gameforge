@@ -19,13 +19,12 @@ import (
 	"gameforge/internal/arcade"
 	"gameforge/internal/gameart"
 	"gameforge/internal/i18n"
+	"gameforge/internal/nointro"
 	"gameforge/internal/sevenzip"
 )
 
 // sideExts are files that live next to games but are not games: RetroArch
 // saves, states, thumbnails and settings, playlists, patches and notes.
-// Their boxes start unchecked in the 7z tab; any other extension starts
-// checked.
 var sideExts = map[string]bool{
 	".auto": true, ".srm": true, ".sav": true, ".rtc": true, ".mcr": true,
 	".png": true, ".jpg": true, ".jpeg": true, ".bmp": true, ".gif": true,
@@ -68,22 +67,34 @@ var removeMu sync.Mutex
 // sevenZip holds the 7z tab's choices; ui is set when the tab is built.
 var sevenZip struct {
 	ui      *ui
-	exts    *TFrameWidget // the extension boxes, rebuilt when the files change
-	shown   string        // the extensions and counts the boxes show
 	deleteV *VariableOpt
 }
 
-// szEnabled says whether files with this extension are compressed.
-func szEnabled(ext string) bool {
-	if ext == ".7z" || ext == ".state" {
-		return false
+// isROMFile tells the files the ROMs tab lists: cartridge ROMs of the
+// consoles it knows, and ZIP and 7z archives. Saves, states, images and
+// the like next to them are left out. A .bin is a cartridge ROM (Mega
+// Drive, Atari…) unless a CUE or GDI sheet is next to it: then it is a
+// disc's track.
+func isROMFile(path string) bool {
+	switch ext := extOf(path); {
+	case ext == ".zip" || ext == ".7z" || romPlatforms[ext] != "" || nointro.SystemOf(ext) != "":
+		return ext != ".bin"
+	case ext == ".bin":
+		entries, _ := os.ReadDir(filepath.Dir(path))
+		return !slices.ContainsFunc(entries, func(e os.DirEntry) bool {
+			e2 := extOf(e.Name())
+			return e2 == ".cue" || e2 == ".gdi"
+		})
 	}
-	if u := sevenZip.ui; u != nil {
-		if v, ok := u.cfg.SevenZipExts[ext]; ok {
-			return v
-		}
+	return false
+}
+
+// archiveExt is the archive the ROMs tab writes: ".7z" or ".zip".
+func archiveExt() string {
+	if romZip() {
+		return ".zip"
 	}
-	return !sideExts[ext]
+	return ".7z"
 }
 
 // sevenZipConverter compresses game files, or recompresses ZIP files, to
@@ -95,72 +106,23 @@ var sevenZipConverter = &converter{
 	button: "btn.sz",
 	tip:    "btn.sz.tip",
 	anyExt: true,
-	// 7z files are listed too, to be renamed, but not compressed again.
-	accept: func(path string) bool { return extOf(path) == ".7z" || szEnabled(extOf(path)) },
+	// Archives already in the chosen format are listed too, to be renamed
+	// and checked, but not compressed again.
+	accept: isROMFile,
 	drop:   func(string) bool { return false }, // only when the tab is shown
 	types:  []FileType{{TypeName: "*", Extensions: []string{"*"}}},
 	describe: func(it *convItem) {
-		it.ok = false
-		st, err := os.Stat(it.path)
-		if err != nil {
-			it.detail = lazyf("⚠ %v", err)
-			return
+		describeROM(it)
+		// Each row tells what it becomes, which follows the format chosen.
+		to := map[bool]string{false: "7z", true: "ZIP"}[romZip()]
+		if it.ok {
+			it.detail = lazyf("%s → %s", it.detail, to)
+		} else if it.infoOnly {
+			it.detail = lazyf("%s · %s", it.detail, msg("sz.kept", to))
 		}
-		size := humanSize(st.Size())
-		ext := extOf(it.path)
-		if ext == ".7z" {
-			it.infoOnly = true
-			it.platform = "7z"
-			entries, err := sevenzip.List(it.path)
-			if err != nil {
-				it.detail = lazyf("%s · %v", size, err)
-				return
-			}
-			n := 0
-			for _, e := range entries {
-				if !e.Dir {
-					n++
-				}
-			}
-			it.detail = msg("sz.row_7z", n, size)
-			if hasNDS(entries) {
-				it.iconLater = func() []byte { return ndsIconIn7z(it.path) }
-			}
-			return
-		}
-		if ext != ".zip" {
-			it.platform = romPlatforms[ext]
-			it.ok = true
-			it.detail = msg("sz.row", size)
-			switch ext {
-			case ".nds":
-				describeNDS(it, size)
-			case ".z64", ".v64", ".n64":
-				describeN64(it, size)
-			}
-			return
-		}
-		it.platform = "ZIP"
-		zr, files, err := openZip(it.path)
-		if err != nil {
-			it.detail = lazyf("%v", err)
-			return
-		}
-		for _, zf := range files {
-			if strings.EqualFold(filepath.Ext(zf.Name), ".nds") {
-				if r, err := zf.Open(); err == nil {
-					it.icon, _ = gameart.NDS(r)
-					r.Close()
-				}
-				break
-			}
-		}
-		zr.Close()
-		it.ok = true
-		it.detail = msg("sz.row_zip", len(files), size)
 	},
 	outName: func(it *convItem) string {
-		return strings.TrimSuffix(filepath.Base(it.path), filepath.Ext(it.path)) + ".7z"
+		return strings.TrimSuffix(filepath.Base(it.path), filepath.Ext(it.path)) + archiveExt()
 	},
 	run: func(ctx context.Context, u *ui, it *convItem, out string, verify bool,
 		progress func(bool, int64, int64)) (int64, int64, error) {
@@ -172,13 +134,30 @@ var sevenZipConverter = &converter{
 		// interrupted run leaves no archive that looks done.
 		part := out + ".part"
 		defer os.Remove(part)
-		res, err := writeSevenZip(ctx, u, it.path, st, part, progress)
-		if err != nil {
-			return 0, 0, err
+		var outSize int64
+		var check func() error
+		if romZip() {
+			entries, err := writeZip(ctx, u, it.path, st, part, progress)
+			if err != nil {
+				return 0, 0, err
+			}
+			pst, err := os.Stat(part)
+			if err != nil {
+				return 0, 0, err
+			}
+			outSize = pst.Size()
+			check = func() error { return checkZip(ctx, part, entries, progress) }
+		} else {
+			res, err := writeSevenZip(ctx, u, it.path, st, part, progress)
+			if err != nil {
+				return 0, 0, err
+			}
+			outSize = res.OutputSize
+			check = func() error { return checkSevenZip(ctx, part, res.Entries, progress) }
 		}
 		del := u.cfg.SevenZipDelete
 		if verify || del { // never remove an original without checking its archive
-			if err := checkSevenZip(ctx, part, res.Entries, progress); err != nil {
+			if err := check(); err != nil {
 				if ctx.Err() == nil {
 					err = fmt.Errorf("%s: %w", T("log.verify_failed"), err)
 				}
@@ -199,7 +178,7 @@ var sevenZipConverter = &converter{
 				u.logf("sz.deleted", filepath.Base(it.path))
 			}
 		}
-		return st.Size(), res.OutputSize, nil
+		return st.Size(), outSize, nil
 	},
 	extra: func(u *ui, parent *TFrameWidget) []Widget {
 		rename := parent.TButton(Txt(T("btn.rename")), Command(func() {
@@ -286,12 +265,7 @@ var sevenZipConverter = &converter{
 	options: func(u *ui, parent *TFrameWidget) []Widget {
 		sevenZip.ui = u
 		box := parent.TFrame()
-		label := box.TLabel(Txt(T("sz.exts")))
-		setTooltip(label, T("sz.exts.tip"))
-		Grid(label, Row(0), Column(0), Sticky("nw"), pad)
-		sevenZip.exts = box.TFrame()
-		sevenZip.shown = "\x00" // rebuilt by the first refresh
-		Grid(sevenZip.exts, Row(0), Column(1), Sticky("w"))
+		Grid(formatBox(u, box), Row(0), Column(0), Sticky("w"), pad)
 		sevenZip.deleteV = Variable(tclBool(u.cfg.SevenZipDelete))
 		del := box.TCheckbutton(Txt(T("sz.delete")), sevenZip.deleteV, Command(func() {
 			u.cfg.SevenZipDelete = sevenZip.deleteV.Get() == "1"
@@ -302,16 +276,15 @@ var sevenZipConverter = &converter{
 			tip += "\n\n" + T("sz.delete.trash")
 		}
 		setTooltip(del, tip)
-		Grid(del, Row(1), Column(0), Columnspan(2), Sticky("w"), pad)
-		Grid(jobsBox(u, box), Row(2), Column(0), Columnspan(2), Sticky("w"), pad)
+		Grid(del, Row(1), Column(0), Sticky("w"), pad)
+		Grid(jobsBox(u, box), Row(2), Column(0), Sticky("w"), pad)
 		keep := box.TFrame()
 		Grid(keepBox(u, keep), Row(0), Column(0), Sticky("w"))
 		Grid(regionBox(u, keep), Row(0), Column(1), Sticky("w"), Padx("6m 0"))
-		Grid(keep, Row(3), Column(0), Columnspan(2), Sticky("w"), pad)
+		Grid(keep, Row(3), Column(0), Sticky("w"), pad)
 		return []Widget{box}
 	},
-	refreshed: func(u *ui, t *convTab) { fillExtBoxes(u, t) },
-	jobs:      sevenZipJobs,
+	jobs: sevenZipJobs,
 }
 
 // sevenZipJobLimits are the most files the 7z tab compresses at a time
@@ -357,63 +330,40 @@ func jobsBox(u *ui, parent *TFrameWidget) *TFrameWidget {
 	return f
 }
 
-// fillExtBoxes shows one box per extension among the tab's files, with
-// how many files have it, when the files have changed.
-func fillExtBoxes(u *ui, t *convTab) {
-	if sevenZip.exts == nil {
-		return
+// formatBox is the choice between 7z and ZIP archives. Changing it lists
+// the files again: 7z files can become ZIPs, ZIP files only with 7z.
+func formatBox(u *ui, parent *TFrameWidget) *TFrameWidget {
+	f := parent.TFrame()
+	label := f.TLabel(Txt(T("sz.format")))
+	options := []string{T("sz.format.7z"), T("sz.format.zip")}
+	width := 0
+	for _, o := range options {
+		width = max(width, len([]rune(o)))
 	}
-	count := map[string]int{}
-	for _, p := range t.pool {
-		if e := extOf(p); e != ".7z" && e != "" {
-			count[e]++
+	box := f.TCombobox(State("readonly"), Values(tclList(options)), Width(width+1))
+	box.Current(map[bool]int{false: 0, true: 1}[romZip()])
+	Bind(box, "<<ComboboxSelected>>", Command(func() {
+		if u.busy {
+			box.Current(map[bool]int{false: 0, true: 1}[romZip()])
+			return
 		}
-	}
-	exts := make([]string, 0, len(count))
-	for e := range count {
-		exts = append(exts, e)
-	}
-	slices.SortFunc(exts, func(a, b string) int {
-		return cmp.Or(cmp.Compare(count[b], count[a]), cmp.Compare(a, b))
-	})
-	var key strings.Builder
-	for _, e := range exts {
-		fmt.Fprintf(&key, "%s=%d;", e, count[e])
-	}
-	if key.String() == sevenZip.shown {
-		return
-	}
-	sevenZip.shown = key.String()
-	for _, w := range WinfoChildren(sevenZip.exts.Window) {
-		Destroy(w)
-	}
-	if len(exts) == 0 {
-		Grid(sevenZip.exts.TLabel(Txt(T("sz.exts_none"))), Row(0), Column(0), Sticky("w"), pad)
-		return
-	}
-	for i, e := range exts {
-		e := e
-		var v *VariableOpt
-		v = Variable(tclBool(szEnabled(e)))
-		cb := sevenZip.exts.TCheckbutton(Txt(fmt.Sprintf("%s (%d)", e, count[e])), v, Command(func() {
-			if u.busy {
-				return
-			}
-			if u.cfg.SevenZipExts == nil {
-				u.cfg.SevenZipExts = map[string]bool{}
-			}
-			u.cfg.SevenZipExts[e] = v.Get() == "1"
-			u.saveConfig()
-			t.refilter(u)
-		}))
-		if e == ".state" {
-			enable(cb, false) // save states are never compressed
+		u.cfg.ROMArchive = ""
+		if box.Current(nil) == "1" {
+			u.cfg.ROMArchive = "zip"
 		}
-		Grid(cb, Row(i/8), Column(i%8), Sticky("w"), pad)
-	}
-	if u.busy {
-		enableTree(sevenZip.exts.Window, false)
-	}
+		u.saveConfig()
+		for _, t := range u.tabs {
+			if t.conv.id == "7z" {
+				t.items = nil // described again for the new format
+				t.refilter(u)
+			}
+		}
+	}))
+	setTooltip(label, T("sz.format.tip"))
+	setTooltip(box, T("sz.format.tip"))
+	Grid(label, Row(0), Column(0), Sticky("w"))
+	Grid(box, Row(0), Column(1), Sticky("w"), Padx("1m"))
+	return f
 }
 
 // writeSevenZip writes the archive for one file: the file itself, or the
@@ -527,4 +477,72 @@ func ndsIconIn7z(path string) []byte {
 	}, nil)
 	png, _ := icon.PNG()
 	return png
+}
+
+// describeROM tells what a file of the ROMs tab is and whether it can be
+// compressed: a ROM or a ZIP can, a 7z is listed to be renamed and checked.
+func describeROM(it *convItem) {
+	it.ok = false
+	st, err := os.Stat(it.path)
+	if err != nil {
+		it.detail = lazyf("⚠ %v", err)
+		return
+	}
+	size := humanSize(st.Size())
+	ext := extOf(it.path)
+	if ext == ".7z" {
+		// Listed to be renamed; with ZIP chosen, also to become a ZIP.
+		it.infoOnly = true
+		it.platform = "7z"
+		entries, err := sevenzip.List(it.path)
+		if err != nil {
+			it.detail = lazyf("%s · %v", size, err)
+			return
+		}
+		if romZip() {
+			it.ok, it.infoOnly = true, false
+		}
+		n := 0
+		for _, e := range entries {
+			if !e.Dir {
+				n++
+			}
+		}
+		it.detail = msg("sz.row_7z", n, size)
+		if hasNDS(entries) {
+			it.iconLater = func() []byte { return ndsIconIn7z(it.path) }
+		}
+		return
+	}
+	if ext != ".zip" {
+		it.platform = cmp.Or(romPlatforms[ext], nointro.SystemOf(ext))
+		it.ok = true
+		it.detail = msg("sz.row", size)
+		switch ext {
+		case ".nds":
+			describeNDS(it, size)
+		case ".z64", ".v64", ".n64":
+			describeN64(it, size)
+		}
+		return
+	}
+	it.platform = "ZIP"
+	zr, files, err := openZip(it.path)
+	if err != nil {
+		it.detail = lazyf("%v", err)
+		return
+	}
+	for _, zf := range files {
+		if strings.EqualFold(filepath.Ext(zf.Name), ".nds") {
+			if r, err := zf.Open(); err == nil {
+				it.icon, _ = gameart.NDS(r)
+				r.Close()
+			}
+			break
+		}
+	}
+	zr.Close()
+	// With ZIP chosen, a ZIP is already what it would become.
+	it.ok, it.infoOnly = !romZip(), romZip()
+	it.detail = msg("sz.row_zip", len(files), size)
 }

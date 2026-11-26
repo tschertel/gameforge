@@ -60,14 +60,13 @@ type Config struct {
 	WiiKeyPath string `json:"wii_key_path,omitempty"`
 	// RvzChunk is the RVZ block size in KiB (0: 128).
 	RvzChunk int `json:"rvz_chunk_kib,omitempty"`
-	// SevenZipExts records the extensions the user checked (true) or
-	// unchecked (false) in the 7z tab; others follow the defaults.
-	SevenZipExts map[string]bool `json:"sevenzip_exts,omitempty"`
 	// SevenZipDelete removes the original files after their 7z archive is
 	// written and verified.
 	SevenZipDelete bool `json:"sevenzip_delete,omitempty"`
 	// SevenZipJobs is how many files the 7z tab compresses at a time (0: 1).
 	SevenZipJobs int `json:"sevenzip_jobs,omitempty"`
+	// ROMArchive is what the ROMs tab writes: "zip" for ZIP, else 7z.
+	ROMArchive string `json:"rom_archive,omitempty"`
 	// DupesKeep is the order of the extensions whose file is kept of the
 	// duplicates of a game in the ROMs tab, such as "7z, neo, zip" (the
 	// default when empty).

@@ -2,6 +2,19 @@
 
 All notable changes to GameForge. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/): the minor number grows with new features, the patch number with small fixes.
 
+## [Unreleased]
+
+### Added
+- **Archive: 7z or ZIP** in the ROMs tab. ZIP archives are larger but open in emulators that list 7z and crash on it; with ZIP, 7z files in the list become ZIPs with the same files and dates. Thanks to the macOS user on Reddit who asked for it.
+
+### Changed
+- The ROMs tab lists only games: cartridge ROMs of the consoles it knows and ZIP and 7z archives, no longer saves, states or images. The extension checkboxes below the list are gone: the files checked in the list are the ones compressed, and each row tells what it becomes (`→ 7z`, `→ ZIP`, or that it stays as it is). A `.bin` next to a CUE or GDI sheet is a disc track and is not listed.
+
+### Fixed
+- Drop-down lists can no longer be typed into after a run.
+- On macOS, the descriptions at the top of the tabs no longer make the window grow or change size again and again: a description no longer asks for more room than the window gives it ([#3](https://github.com/tschertel/gameforge/pull/3), by @mbisono).
+- On macOS, the automatic theme follows the system's dark mode, and the window's own parts (title bar, native controls) follow the theme chosen ([#3](https://github.com/tschertel/gameforge/pull/3), by @mbisono).
+
 ## [2.21.1] - 2026-11-25
 
 ### Changed

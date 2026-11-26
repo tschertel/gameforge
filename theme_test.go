@@ -1,8 +1,9 @@
 package main
 
 import (
-	"gameforge/internal/config"
 	"testing"
+
+	"gameforge/internal/config"
 )
 
 func TestDarkMode(t *testing.T) {

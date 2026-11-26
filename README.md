@@ -9,7 +9,7 @@
 
 ![The Nintendo Switch tab](docs/images/en/switch.png)
 
-Current version: **2.21.1**. [Download](#download) · [Full guide](docs/GUIDE.md) · [What's new](CHANGELOG.md)
+Current version: **2.22.0**. [Download](#download) · [Full guide](docs/GUIDE.md) · [What's new](CHANGELOG.md)
 
 > **New in 2.21: Collection report.** Point it at your `ROMS` folder and get one HTML page of all your games, by console, with search and filters. It shows the games you have on more than one console, such as *LEGO Star Wars II* on PS2, PSP, GBA and Xbox, or *Street Fighter Alpha 3* on CPS2 (`sfa3.zip`) and PS1. In the ROMs tab: **Check ▾ → Collection report**.
 
@@ -42,7 +42,7 @@ For PS1, PS2, PSP, Saturn, Sega CD, Dreamcast, GameCube, Wii, Xbox and more:
 
 ![The ROMs tab](docs/images/en/roms.png)
 
-- **Compresses** ROMs to **7z**, one archive per game, and recompresses arcade ZIPs.
+- **Compresses** ROMs to **7z** or **ZIP** (for emulators that crash on 7z), one archive per game; recompresses arcade ZIPs to 7z, and turns 7z files into ZIPs.
 - **Renames** ROMs with their **No-Intro** names, finds **duplicates** and keeps **one version per game** (1G1R) by your preferred regions.
 - **Collection report** (new): an HTML page of the games in your console folders, with a search field and filters, that shows which games you have on more than one console, arcade sets included.
 - **Checks arcade sets** for FBNeo, the RetroArch MAME cores and Flycast (NAOMI, Atomiswave), and tells the AES and MVS versions of Neo Geo games apart.

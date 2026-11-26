@@ -9,7 +9,7 @@
 
 ![A aba Nintendo Switch](docs/images/pt-BR/switch.png)
 
-Versão atual: **2.21.1**. [Download](#download) · [Guia completo](docs/GUIDE.pt-BR.md) · [Novidades](CHANGELOG.md)
+Versão atual: **2.22.0**. [Download](#download) · [Guia completo](docs/GUIDE.pt-BR.md) · [Novidades](CHANGELOG.md)
 
 > **Novo na 2.21: Relatório da coleção.** Aponte para a sua pasta `ROMS` e receba uma página HTML com todos os seus jogos, por console, com pesquisa e filtros. Ela mostra os jogos que você tem em mais de um console, como *LEGO Star Wars II* no PS2, PSP, GBA e Xbox, ou *Street Fighter Alpha 3* no CPS2 (`sfa3.zip`) e no PS1. Na aba ROMs: **Verificar ▾ → Relatório da coleção**.
 
@@ -42,7 +42,7 @@ Para PS1, PS2, PSP, Saturn, Sega CD, Dreamcast, GameCube, Wii, Xbox e outros:
 
 ![A aba ROMs](docs/images/pt-BR/roms.png)
 
-- **Comprime** ROMs em **7z**, um arquivo por jogo, e recomprime ZIPs de arcade.
+- **Comprime** ROMs em **7z** ou **ZIP** (para emuladores que travam com 7z), um arquivo por jogo; recomprime ZIPs de arcade em 7z e transforma arquivos 7z em ZIP.
 - **Renomeia** ROMs com os nomes do **No-Intro**, encontra **duplicados** e mantém **uma versão de cada jogo** (1G1R) pela sua ordem de regiões.
 - **Relatório da coleção** (novo): uma página HTML com os jogos das suas pastas de console, com campo de pesquisa e filtros, que mostra quais jogos você tem em mais de um console, inclusive sets de arcade.
 - **Verifica sets de arcade** para o FBNeo, os cores de MAME do RetroArch e o Flycast (NAOMI, Atomiswave), e diferencia as versões AES e MVS dos jogos de Neo Geo.

@@ -52,8 +52,6 @@ type converter struct {
 	options2 func(u *ui, parent *TFrameWidget) []Widget
 	menu     func(u *ui, t *convTab, it *convItem) []menuEntry
 	after    func(u *ui, done []converted)
-	// refreshed, if set, runs after the tab's list is shown again.
-	refreshed func(u *ui, t *convTab)
 	// jobs, if set, is how many files are converted at a time (else 1).
 	jobs func(u *ui) int
 	// back, if set, is a conversion the other way (e.g. CHD to CUE/BIN)
@@ -521,9 +519,6 @@ func (t *convTab) refresh(u *ui) {
 	}
 	t.summary.Configure(Txt(T("summary.conv", len(t.items), marked, humanSize(size))))
 	t.setBusy(u, u.busy)
-	if t.conv.refreshed != nil {
-		t.conv.refreshed(u, t)
-	}
 }
 
 func (t *convTab) setBusy(u *ui, busy bool) {
@@ -911,8 +906,11 @@ func (u *ui) dropPaths(paths []string) {
 // enableTree enables or disables the widgets inside a frame, at any depth
 // (frames and labels without a state are skipped).
 func enableTree(w *Window, on bool) {
-	state := map[bool]string{true: "normal", false: "disabled"}[on]
 	for _, c := range WinfoChildren(w) {
+		state := map[bool]string{true: "normal", false: "disabled"}[on]
+		if on && tcl("winfo", "class", c.String()) == "TCombobox" {
+			state = "readonly" // "normal" would let one type into the box
+		}
 		tcl("catch", c.String()+" configure -state "+state)
 		enableTree(c, on)
 	}

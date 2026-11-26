@@ -44,6 +44,9 @@ func TestGUI(t *testing.T) {
 
 func checkGUI() error {
 	defer Destroy(App)
+	// The main window starts hidden on Windows, and a hidden window keeps
+	// its size, so the text would never reflow.
+	WmDeiconify(App)
 	initThemes()
 	for _, dark := range []bool{false, true, false} {
 		applyTheme(dark)

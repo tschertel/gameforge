@@ -61,19 +61,6 @@ func TestSevenZipConverter(t *testing.T) {
 		t.Errorf("pool has %d files", len(tab.pool))
 	}
 
-	// Unchecking .gbc removes it from the list; checking .png adds it.
-	u.cfg.SevenZipExts = map[string]bool{".gbc": false, ".png": true}
-	tab.refilter(u)
-	listed = nil
-	for _, it := range tab.items {
-		listed = append(listed, filepath.Base(it.path))
-	}
-	if strings.Join(listed, ",") != "Game (USA).png,sf2.zip" {
-		t.Fatalf("after the change, listed %v", listed)
-	}
-	u.cfg.SevenZipExts = nil
-	tab.refilter(u)
-
 	for _, it := range tab.items {
 		out := filepath.Join(dir, sevenZipConverter.outName(it))
 		in, size, err := sevenZipConverter.run(context.Background(), u, it, out, false, func(bool, int64, int64) {})
@@ -157,5 +144,30 @@ func TestInfoOnlyChecked(t *testing.T) {
 	tab.checked["a.7z"] = false
 	if tab.marked(a) || len(tab.checkedItems()) != 1 {
 		t.Errorf("after unchecking: %v %d", tab.marked(a), len(tab.checkedItems()))
+	}
+}
+
+// TestIsROMFile: ROMs and archives are listed; saves, images and disc
+// tracks (a .bin next to a CUE sheet) are not.
+func TestIsROMFile(t *testing.T) {
+	dir := t.TempDir()
+	disc, cart := filepath.Join(dir, "disc"), filepath.Join(dir, "cart")
+	os.MkdirAll(disc, 0o755)
+	os.MkdirAll(cart, 0o755)
+	os.WriteFile(filepath.Join(disc, "Game (USA).cue"), nil, 0o644)
+	for path, want := range map[string]bool{
+		filepath.Join(cart, "Sonic (World).bin"):        true,
+		filepath.Join(disc, "Game (USA) (Track 1).bin"): false,
+		filepath.Join(cart, "Game (USA).gba"):           true,
+		filepath.Join(cart, "Game (USA).A52"):           true, // a No-Intro extension, any case
+		filepath.Join(cart, "sf2.zip"):                  true,
+		filepath.Join(cart, "Game (USA).7z"):            true,
+		filepath.Join(cart, "Game (USA).srm"):           false,
+		filepath.Join(cart, "Game (USA).state.auto"):    false,
+		filepath.Join(cart, "Game (USA).png"):           false,
+	} {
+		if got := isROMFile(path); got != want {
+			t.Errorf("%s: %v, want %v", filepath.Base(path), got, want)
+		}
 	}
 }
