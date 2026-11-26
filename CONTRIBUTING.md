@@ -13,6 +13,8 @@ You need Go (the version in `go.mod`); no C compiler, as Tk is used without CGO.
 - Windows: `./build.ps1` builds `gameforge.exe`. Linux: `./build.sh`.
 - Tests: `go vet ./... && go test ./...`. Some tests also run with real tools or data when an environment variable is set: `SEVENZIP` (path to `7z.exe`), `CHDMAN` (path to `chdman`), `REDUMP_DATS` and `NOINTRO_DATS` (folders of `.dat` files).
 
+GUI regression tests open isolated windows and require an active desktop session: `GAMEFORGE_GUI_TESTS=1 go test . -run '^TestGUI$' -count=1`. They do not load user configuration, keys or games.
+
 ## Rules for changes
 
 - **No keys and no games**, anywhere: not in code, tests, test data, issues or pull requests. Test data is synthetic.

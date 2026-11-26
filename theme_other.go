@@ -4,13 +4,6 @@ package main
 
 import "strconv"
 
-// systemDark is false: there is no common way to ask X11 desktops for their
-// color scheme, so "auto" means light here.
-func systemDark() bool { return false }
-
-// setTitleBarDark does nothing: the window manager draws the title bar.
-func setTitleBarDark(bool) {}
-
 // onScreen checks the point against the screen; window managers usually
 // move windows back into view themselves.
 func onScreen(x, y int) bool {

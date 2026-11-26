@@ -1706,6 +1706,8 @@ func onGUI(f func()) {
 // the window: a wide window shows a description in fewer lines, a narrow one
 // in more. The label must stretch across its column (sticky "we").
 func wrapToWidth(label interface{ String() string }) {
+	// Let the grid determine the width; wrapping must not change its request.
+	tcl(label.String(), "configure", "-width", "1")
 	tcl("bind", label.String(), "<Configure>",
 		"if {%w > 1 && [%W cget -wraplength] != %w} {%W configure -wraplength %w}")
 }
