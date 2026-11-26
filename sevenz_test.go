@@ -170,4 +170,12 @@ func TestIsROMFile(t *testing.T) {
 			t.Errorf("%s: %v, want %v", filepath.Base(path), got, want)
 		}
 	}
+	// A sheet added to the folder later is seen: the folder is read again.
+	os.WriteFile(filepath.Join(cart, "Disc (USA).cue"), nil, 0o644)
+	// On Windows the folder's time can stay the same within a clock tick.
+	later := time.Now().Add(time.Minute)
+	os.Chtimes(cart, later, later)
+	if isROMFile(filepath.Join(cart, "Sonic (World).bin")) {
+		t.Error("a .bin next to a new CUE sheet is still listed")
+	}
 }

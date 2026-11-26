@@ -2,6 +2,14 @@
 
 All notable changes to GameForge. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/): the minor number grows with new features, the patch number with small fixes.
 
+## [2.23.1] - 2026-11-26
+
+### Fixed
+- Changing **Archive: 7z or ZIP** in the ROMs tab keeps the files you unchecked unchecked; before, they were checked again and compressed with the others.
+- Opening a folder with thousands of `.bin` ROMs in the ROMs tab no longer reads the folder once per file to look for a CUE or GDI sheet.
+- The collection report names arcade sets by the same title each time (the one the ROMs tab shows), instead of the title of whichever list came first.
+- **Export what is missing (CSV)…** separates the columns with semicolons when the app is not in English, as Excel expects in those regions; before, Excel showed each row in a single column there.
+
 ## [2.23.0] - 2026-11-26
 
 ### Changed
@@ -306,6 +314,7 @@ All notable changes to GameForge. The format follows [Keep a Changelog](https://
 
 nspmerge: merging Nintendo Switch base games, updates and DLCs, with NSZ compression.
 
+[2.23.1]: https://github.com/tschertel/gameforge/releases/tag/v2.23.1
 [2.23.0]: https://github.com/tschertel/gameforge/releases/tag/v2.23.0
 [2.22.0]: https://github.com/tschertel/gameforge/releases/tag/v2.22.0
 [2.21.1]: https://github.com/tschertel/gameforge/releases/tag/v2.21.1

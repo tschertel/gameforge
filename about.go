@@ -78,8 +78,10 @@ import (
 // and stops the descriptions from resizing the window on macOS; it also
 // checks many Switch backups at once, exports the missing updates and DLCs
 // to CSV and can save the log of each run, 2.23.0 asks the project's server
-// for new versions, which counts the checks.
-const appVersion = "2.23.0"
+// for new versions, which counts the checks, 2.23.1 fixes what an audit
+// found: checks lost on a format change, slow .bin folders, arcade titles
+// of the collection report and the CSV separator.
+const appVersion = "2.23.1"
 
 // repoURL is the project's page, with the source code and the releases.
 const repoURL = "https://github.com/tschertel/gameforge"

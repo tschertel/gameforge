@@ -13,6 +13,7 @@ import (
 
 	. "modernc.org/tk9.0"
 
+	"gameforge/internal/arcade"
 	"gameforge/internal/i18n"
 	"gameforge/internal/nointro"
 )
@@ -63,10 +64,10 @@ func titleKey(name string) (title, key string) {
 
 // scanCollection lists the games in the console folders of root (each
 // folder of root is a console, named as the folder): one row per title and
-// console, however many files it has (tracks, discs, regions). arcade maps
-// the short names of arcade sets ("sfa3") to their titles, so they match
-// the same game on consoles; a BIOS maps to "" and is left out.
-func scanCollection(root string, arcade map[string]string) ([]collectionRow, error) {
+// console, however many files it has (tracks, discs, regions). arcade
+// finds arcade sets by their short names ("sfa3"), so that they count by
+// their titles and match the same game on consoles; BIOS sets are left out.
+func scanCollection(root string, arcade *arcade.DB) ([]collectionRow, error) {
 	entries, err := os.ReadDir(root)
 	if err != nil {
 		return nil, err
@@ -90,11 +91,11 @@ func scanCollection(root string, arcade map[string]string) ([]collectionRow, err
 			if d.IsDir() || !isCollectionGame(d.Name()) {
 				return nil
 			}
-			if t, ok := arcade[strings.ToLower(stem)]; ok {
-				if t == "" {
+			if set := arcade.Set(stem); set != nil {
+				if set.Bios {
 					return nil
 				}
-				stem = t
+				stem = set.Title
 			}
 			title, key := titleKey(stem)
 			if key == "" || seen[key] {
@@ -233,18 +234,7 @@ func (u *ui) collectionReport() {
 		return
 	}
 	// The titles of the arcade sets, when the lists were downloaded.
-	arcade := map[string]string{}
-	if db := u.arcadeLists(); db != nil {
-		for _, l := range db.Lists {
-			for name, s := range l.Sets {
-				if s.Bios {
-					arcade[name] = ""
-				} else if _, ok := arcade[name]; !ok {
-					arcade[name] = s.Title
-				}
-			}
-		}
-	}
+	arcade := u.arcadeLists()
 	u.setBusy(true)
 	u.separate()
 	go func() {

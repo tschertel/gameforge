@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"gameforge/internal/i18n"
 	"gameforge/internal/merge"
 	"gameforge/internal/titledb"
 )
@@ -54,6 +55,16 @@ func TestMissingCSV(t *testing.T) {
 		"1", "Two [0100EBA004727002]", "1", "One [0100EBA004727001] v0 → v65536"}
 	if len(rows) != 2 || strings.Join(rows[1], "|") != strings.Join(want, "|") {
 		t.Errorf("rows %q\nwant %q", rows, want)
+	}
+
+	// Outside English, the separator is a semicolon, as Excel expects there.
+	i18n.Set("pt")
+	defer i18n.Set("en")
+	data, _ = missingCSV(games, selected, db)
+	r := csv.NewReader(strings.NewReader(strings.TrimPrefix(string(data), bom)))
+	r.Comma = ';'
+	if rows, err := r.ReadAll(); err != nil || len(rows) != 2 || rows[1][1] != "0100EBA004726000" {
+		t.Errorf("with semicolons: %q, %v", rows, err)
 	}
 }
 

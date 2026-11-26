@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	. "modernc.org/tk9.0"
 
@@ -80,13 +81,42 @@ func isROMFile(path string) bool {
 	case ext == ".zip" || ext == ".7z" || romPlatforms[ext] != "" || nointro.SystemOf(ext) != "":
 		return ext != ".bin"
 	case ext == ".bin":
-		entries, _ := os.ReadDir(filepath.Dir(path))
-		return !slices.ContainsFunc(entries, func(e os.DirEntry) bool {
-			e2 := extOf(e.Name())
-			return e2 == ".cue" || e2 == ".gdi"
-		})
+		return !hasSheet(filepath.Dir(path))
 	}
 	return false
+}
+
+// sheetDirs remembers which folders hold a CUE or GDI sheet, with the
+// folder's modification time, so that a folder of thousands of .bin ROMs
+// is read once, not once per file.
+var sheetDirs = struct {
+	sync.Mutex
+	m map[string]sheetDir
+}{m: map[string]sheetDir{}}
+
+type sheetDir struct {
+	mod   time.Time
+	sheet bool
+}
+
+// hasSheet tells whether dir holds a CUE or GDI sheet.
+func hasSheet(dir string) bool {
+	st, err := os.Stat(dir)
+	if err != nil {
+		return false
+	}
+	sheetDirs.Lock()
+	defer sheetDirs.Unlock()
+	if d, ok := sheetDirs.m[dir]; ok && d.mod.Equal(st.ModTime()) {
+		return d.sheet
+	}
+	entries, _ := os.ReadDir(dir)
+	sheet := slices.ContainsFunc(entries, func(e os.DirEntry) bool {
+		ext := extOf(e.Name())
+		return ext == ".cue" || ext == ".gdi"
+	})
+	sheetDirs.m[dir] = sheetDir{st.ModTime(), sheet}
+	return sheet
 }
 
 // archiveExt is the archive the ROMs tab writes: ".7z" or ".zip".
@@ -330,7 +360,7 @@ func jobsBox(u *ui, parent *TFrameWidget) *TFrameWidget {
 	return f
 }
 
-// formatBox is the choice between 7z and ZIP archives. Changing it lists
+// formatBox is the choice between 7z and ZIP archives. Changing it describes
 // the files again: 7z files can become ZIPs, ZIP files only with 7z.
 func formatBox(u *ui, parent *TFrameWidget) *TFrameWidget {
 	f := parent.TFrame()
@@ -354,8 +384,11 @@ func formatBox(u *ui, parent *TFrameWidget) *TFrameWidget {
 		u.saveConfig()
 		for _, t := range u.tabs {
 			if t.conv.id == "7z" {
-				t.items = nil // described again for the new format
-				t.refilter(u)
+				// Each row tells what it becomes now; the checks stay.
+				for _, it := range t.items {
+					t.conv.describe(it)
+				}
+				t.refresh(u)
 			}
 		}
 	}))

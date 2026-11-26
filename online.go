@@ -252,6 +252,12 @@ func missingCSV(games []*merge.Game, selected map[*merge.Game][]*merge.NSP, db *
 	var b bytes.Buffer
 	b.WriteString(string(rune(0xFEFF))) // byte order mark
 	w := csv.NewWriter(&b)
+	// Excel splits a CSV at the list separator of Windows' regional
+	// settings: a comma in English, a semicolon where the comma is the
+	// decimal mark, as in the app's other languages.
+	if i18n.Current() != "en" {
+		w.Comma = ';'
+	}
 	w.Write([]string{T("csv.game"), "Title ID", T("csv.have"), T("csv.latest"), T("csv.released"),
 		T("csv.dlc_missing"), T("csv.dlc_missing_names"), T("csv.dlc_old"), T("csv.dlc_old_names")})
 	version := func(v uint32) string {

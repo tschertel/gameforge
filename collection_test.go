@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"gameforge/internal/arcade"
 )
 
 // TestScanCollection: one row per title and console folder, the other
@@ -37,7 +39,10 @@ func TestScanCollection(t *testing.T) {
 		os.MkdirAll(filepath.Dir(p), 0o755)
 		os.WriteFile(p, nil, 0o644)
 	}
-	rows, err := scanCollection(root, map[string]string{"neogeo": "", "sfa3": "Street Fighter Alpha 3 (USA 980904)"})
+	rows, err := scanCollection(root, &arcade.DB{Lists: map[string]*arcade.List{"fbneo": {Sets: map[string]*arcade.Set{
+		"neogeo": {Name: "neogeo", Title: "Neo-Geo", Bios: true},
+		"sfa3":   {Name: "sfa3", Title: "Street Fighter Alpha 3 (USA 980904)"},
+	}}}})
 	if err != nil {
 		t.Fatal(err)
 	}
