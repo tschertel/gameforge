@@ -82,9 +82,7 @@ var chdConverter = &converter{
 	run: convertDisc,
 	extra: func(u *ui, parent *TFrameWidget) []Widget {
 		check := parent.TButton(Txt(T("btn.check_chd")), Command(func() {
-			if p := u.openFile([]FileType{{TypeName: "CHD", Extensions: []string{".chd"}}}, "", true); p != "" {
-				u.startCheck(p)
-			}
+			u.startCheck(u.openFiles([]FileType{{TypeName: "CHD", Extensions: []string{".chd"}}}))
 		}))
 		rename := parent.TButton(Txt(T("btn.rename")), Command(func() {
 			for _, t := range u.tabs {
@@ -171,7 +169,7 @@ var chdConverter = &converter{
 	options2: rvzOptions,
 	menu: func(u *ui, t *convTab, it *convItem) []menuEntry {
 		if isCHD(it.path) {
-			entries := []menuEntry{{T("btn.check_chd"), false, func() { u.startCheck(it.path) }}}
+			entries := []menuEntry{{T("btn.check_chd"), false, func() { u.startCheck([]string{it.path}) }}}
 			if choices := extractChoices(it.path); len(choices) > 1 {
 				set := func(mode string) func() {
 					return func() {

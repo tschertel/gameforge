@@ -216,13 +216,13 @@ O arquivo mesclado precisa de um instalador que aceite vários títulos num arqu
 
 ## Verificar um backup
 
-**Verificar backup…** abre um `.nsp` ou `.nsz` que você já tem e confere se ele continua íntegro:
+**Verificar backup ▾** confere arquivos `.nsp`, `.nsz` e `.xci` que você já tem, sem alterá-los: **Escolher arquivos…** abre um ou mais arquivos, e **Arquivos marcados na lista** confere os arquivos marcados na lista (abra a pasta da sua biblioteca com **Incluir subpastas** para conferir tudo). Cada arquivo é conferido para ver se continua íntegro:
 
 - cada NCA é lida inteira (as NCZ são descomprimidas) e o SHA-256 dela é comparado com o que os metadados (CNMT) registram; NCAs que nenhum CNMT lista são comparadas com o próprio nome, que é o hash. Como o hash cobre todos os bytes, isso também garante as árvores de hashes internas (IVFC);
 - tudo o que os metadados listam precisa estar no arquivo (fragmentos delta podem faltar: não são necessários para jogar, e o NSZ os descarta);
 - toda NCA que precisa de ticket precisa ter o ticket no arquivo.
 
-O resultado aparece no log ("tudo íntegro" ou a lista de problemas). Sem o `prod.keys` só os nomes dos arquivos podem ser conferidos.
+O resultado aparece no log ("tudo íntegro" ou a lista de problemas). Com vários arquivos, um resumo no fim diz quantos estão íntegros e cita os outros; **Cancelar** para depois do arquivo que está sendo conferido. Sem o `prod.keys` só os nomes dos arquivos podem ser conferidos.
 
 ## Verificar online (titledb)
 
@@ -230,6 +230,7 @@ O botão **Atualizações e DLCs ▾** (aba Nintendo Switch) compara os jogos co
 
 - **Atualizar base de jogos** baixa do GitHub as versões de atualização de todos os jogos (`versions.json`) e o catálogo em inglês com os nomes de jogos e DLCs (`US.en.json`), cerca de 90 MB. O app guarda só o que usa em `cache/titledb.cache` (cerca de 1 MB), ao lado do `gameforge.json`. Todas as bases baixadas ficam na pasta `cache` (as versões anteriores as guardavam ao lado do `gameforge.json`; elas são movidas para lá ao abrir o app). Num novo download, arquivos que não mudaram no servidor não são baixados de novo.
 - **Verificar os jogos da lista** mostra no log, para cada jogo, se existe uma atualização mais nova do que a que você tem (contando a de um arquivo mesclado ou de um jogo base com a atualização aplicada), quais DLCs faltam e quais DLCs têm versão mais nova. Se a base ainda não foi baixada, o app avisa e pergunta se quer baixá-la.
+- **Exportar o que falta (CSV)…** salva a mesma comparação num arquivo CSV, uma linha por jogo com arquivo marcado ao qual falta algo: jogo, title ID, a sua atualização, a atualização mais recente e a data dela, quantos DLCs faltam e os nomes deles, e quantos DLCs estão desatualizados e os nomes deles. Jogos em dia ou que não estão na base ficam de fora. O arquivo abre no Excel ou em qualquer planilha.
 - Com a base carregada, a coluna de detalhes de cada jogo mostra um resumo: "atualizações e DLCs em dia (online)", "atualização mais nova disponível: v655360 de 2026-05-12 • 2 DLCs que não estão na pasta" ou "não consta na base online".
 
 A internet só é usada quando você escolhe **Atualizar base de jogos**; a verificação é feita no computador, sem enviar nada sobre os seus jogos. Ao lado do botão, a aba mostra o estado da base: ainda não baixada, ou até que data ela tem dados, com uma sugestão de atualizá-la se tiver mais de 14 dias. Nada disso aparece no log ao abrir o app. A data importa porque o titledb é atualizado por voluntários, a cada poucas semanas, então atualizações muito recentes podem ainda não estar lá.
@@ -245,6 +246,10 @@ O botão **Renomear…** da aba Nintendo Switch dá aos arquivos marcados o nome
 - DLC: `Nome do Jogo - Nome da DLC [0100XXXXXXXXX001][v0].nsp`.
 
 O nome do jogo é o oficial, lido de dentro do próprio arquivo (precisa do `prod.keys`); sem ele, vem da base de jogos (**Atualizações e DLCs ▾ → Atualizar base de jogos**). Os nomes das DLCs vêm da base de jogos. `:` vira ` - `, símbolos como ™ saem e caracteres proibidos no Windows viram `_`. A extensão (`.nsp`, `.nsz`, `.xci`) não muda. Antes de renomear, o app mostra a lista "nome atual → nome novo" e pede confirmação; um arquivo nunca substitui outro com o mesmo nome, e cada mudança fica no log.
+
+## Salvar o log
+
+Com **Salvar o log de cada execução em arquivo**, na janela **Sobre**, o que cada execução escreve no log (juntar, converter, verificar, renomear…) também é salvo num arquivo de texto com a data e a hora no nome, como `GameForge - 2026-11-26 09-30-05.txt`, na pasta `logs` ao lado do `gameforge.json`. Vem desligado, porque o log tem os nomes dos seus arquivos e pastas.
 
 ## Tema
 

@@ -215,13 +215,13 @@ The merged file needs an installer that accepts several titles in one file and, 
 
 ## Check a backup
 
-**Check backup…** opens an `.nsp` or `.nsz` you already have and checks that it is still intact:
+**Check backup ▾** checks `.nsp`, `.nsz` and `.xci` files you already have, without changing them: **Choose files…** opens one or more files, and **Checked files in the list** checks the files checked in the list (open your library folder with **Include subfolders** to check all of it). Each file is checked for being still intact:
 
 - each NCA is read completely (NCZs are decompressed) and its SHA-256 is compared with the one recorded in the metadata (CNMT); NCAs not listed by any CNMT are compared with their own name, which is the hash. Since the hash covers every byte, this also covers the internal hash trees (IVFC);
 - everything the metadata lists must be in the file (delta fragments may be missing: they are not needed to play, and NSZ drops them);
 - every NCA that needs a ticket must have its ticket in the file.
 
-The result is shown in the log ("everything intact" or the list of problems). Without `prod.keys` only the file names can be checked.
+The result is shown in the log ("everything intact" or the list of problems). With several files, a summary at the end tells how many are intact and names the others; **Cancel** stops after the file being checked. Without `prod.keys` only the file names can be checked.
 
 ## Online check (titledb)
 
@@ -229,6 +229,7 @@ The **Updates and DLCs ▾** button (Nintendo Switch tab) compares the games wit
 
 - **Update game database** downloads from GitHub the update versions of all games (`versions.json`) and the English catalog with game and DLC names (`US.en.json`), about 90 MB. The app keeps only what it uses in `cache/titledb.cache` (about 1 MB), next to `gameforge.json`. All downloaded databases are in the `cache` folder (older versions kept them next to `gameforge.json`; they are moved there at startup). On a new download, files that did not change on the server are not downloaded again.
 - **Check the listed games** shows in the log, for each game, whether there is an update newer than the one you have (counting one inside a merged file or one applied to a base game), which DLCs are missing and which DLCs have a newer version. If the database has not been downloaded yet, the app says so and asks whether to download it.
+- **Export what is missing (CSV)…** saves the same comparison as a CSV file, one row per game with a checked file that lacks something: game, title ID, your update, the latest update and its date, how many DLCs are missing and their names, and how many DLCs are outdated and their names. Games that are up to date or not in the database are left out. The file opens in Excel or any spreadsheet.
 - With the database loaded, each game's details column shows a summary: "updates and DLCs up to date (online)", "newer update available: v655360 from 2026-05-12 • 2 DLCs not in the folder" or "not in the online database".
 
 The internet is used only when you choose **Update game database**; the check runs on your computer, without sending anything about your games. Next to the button, the tab shows the state of the database: not downloaded yet, or up to which date it has data, with a hint to update it if it is more than 14 days old. None of this is written to the log when the app starts. The date matters because titledb is updated by volunteers every few weeks, so very recent updates may not be there yet.
@@ -244,6 +245,10 @@ The **Rename…** button in the Nintendo Switch tab gives the checked files thei
 - DLC: `Game Name - DLC Name [0100XXXXXXXXX001][v0].nsp`.
 
 The game name is the official one, read from the file itself (needs `prod.keys`); without it, it comes from the game database (**Updates and DLCs ▾ → Update game database**). DLC names come from the game database. `:` becomes ` - `, symbols such as ™ are removed and characters not allowed on Windows become `_`. The extension (`.nsp`, `.nsz`, `.xci`) does not change. Before renaming, the app shows the "current name → new name" list and asks for confirmation; a file never replaces another one with the same name, and every change is logged.
+
+## Saving the log
+
+With **Save the log of each run to a file**, in the **About** window, what each run writes to the log (merging, converting, checking, renaming…) is also saved as a text file named with the date and time, such as `GameForge - 2026-11-26 09-30-05.txt`, in the `logs` folder next to `gameforge.json`. It is off by default, as the log holds the names of your files and folders.
 
 ## Theme
 

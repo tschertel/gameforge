@@ -61,11 +61,15 @@ func raReportPath(dir, console string, now time.Time) (string, error) {
 
 // reportPath is a free name in dir for a report named base: base.html,
 // else "base (2).html" and so on, so a report is never written over.
-func reportPath(dir, base string) (string, error) {
+func reportPath(dir, base string) (string, error) { return freePath(dir, base, ".html") }
+
+// freePath is a free name in dir for a file named base with extension ext:
+// base+ext, else "base (2)"+ext and so on.
+func freePath(dir, base, ext string) (string, error) {
 	for n := 1; n < 1000; n++ {
-		name := base + ".html"
+		name := base + ext
 		if n > 1 {
-			name = base + " (" + strconv.Itoa(n) + ").html"
+			name = base + " (" + strconv.Itoa(n) + ")" + ext
 		}
 		p := filepath.Join(dir, name)
 		if _, err := os.Lstat(p); errors.Is(err, fs.ErrNotExist) {

@@ -2,9 +2,12 @@
 
 All notable changes to GameForge. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/): the minor number grows with new features, the patch number with small fixes.
 
-## [Unreleased]
+## [2.22.0] - 2026-11-26
 
 ### Added
+- **Check backup ▾** checks many Switch backups at once: the files chosen in the dialog or the files checked in the list, with a summary at the end that names those with problems ([#4](https://github.com/tschertel/gameforge/issues/4)).
+- **Updates and DLCs ▾ → Export what is missing (CSV)…** saves, one row per game, the missing update and the missing and outdated DLCs ([#4](https://github.com/tschertel/gameforge/issues/4)).
+- **Save the log of each run to a file**, in the About window, keeps the log of each run as a dated text file in the `logs` folder; off by default ([#4](https://github.com/tschertel/gameforge/issues/4)).
 - **Archive: 7z or ZIP** in the ROMs tab. ZIP archives are larger but open in emulators that list 7z and crash on it; with ZIP, 7z files in the list become ZIPs with the same files and dates. Thanks to the macOS user on Reddit who asked for it.
 
 ### Changed
@@ -298,6 +301,7 @@ All notable changes to GameForge. The format follows [Keep a Changelog](https://
 
 nspmerge: merging Nintendo Switch base games, updates and DLCs, with NSZ compression.
 
+[2.22.0]: https://github.com/tschertel/gameforge/releases/tag/v2.22.0
 [2.21.1]: https://github.com/tschertel/gameforge/releases/tag/v2.21.1
 [2.21.0]: https://github.com/tschertel/gameforge/releases/tag/v2.21.0
 [2.20.3]: https://github.com/tschertel/gameforge/releases/tag/v2.20.3

@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
 	"errors"
 	"fmt"
 	"io/fs"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -196,6 +200,92 @@ func (u *ui) reportOnline() {
 	u.println(summary)
 	u.setStatus(summary.String())
 	u.flush()
+}
+
+// exportMissing saves what the games with a checked file lack, compared
+// with the game database, as a CSV file: one row per game.
+func (u *ui) exportMissing() {
+	if u.busy {
+		return
+	}
+	if u.db == nil {
+		u.logf("db.not_found", u.dbPath())
+		u.flush()
+		answer := MessageBox(Parent(App), Icon("question"), Type("yesno"), Title(T("app.title")),
+			Msg(T("db.ask_download", u.dbPath())))
+		if answer == "yes" {
+			u.startDownloadDB(u.exportMissing)
+		}
+		return
+	}
+	selected := u.selectedFiles()
+	if len(selected) == 0 {
+		u.logf("list.none_checked")
+		u.flush()
+		return
+	}
+	data, n := missingCSV(u.games, selected, u.db)
+	if n == 0 {
+		u.logf("online.export_none")
+		u.flush()
+		return
+	}
+	name := T("online.export_file") + " - " + time.Now().Format("2006-01-02") + ".csv"
+	path := u.saveFile(name, []FileType{{TypeName: "CSV", Extensions: []string{".csv"}}})
+	if path == "" {
+		return
+	}
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		u.logf("online.export_error", err)
+	} else {
+		u.logf("online.exported", n, path)
+	}
+	u.flush()
+}
+
+// missingCSV is the CSV of what the games with a checked file lack: a
+// newer update, DLCs the files do not have, DLCs with a newer version. Games
+// with nothing missing and games the database does not know are left out.
+// It returns how many games it lists. The file starts with a byte order
+// mark, so that Excel reads it as UTF-8.
+func missingCSV(games []*merge.Game, selected map[*merge.Game][]*merge.NSP, db *titledb.DB) ([]byte, int) {
+	var b bytes.Buffer
+	b.WriteString(string(rune(0xFEFF))) // byte order mark
+	w := csv.NewWriter(&b)
+	w.Write([]string{T("csv.game"), "Title ID", T("csv.have"), T("csv.latest"), T("csv.released"),
+		T("csv.dlc_missing"), T("csv.dlc_missing_names"), T("csv.dlc_old"), T("csv.dlc_old_names")})
+	version := func(v uint32) string {
+		if v == 0 {
+			return ""
+		}
+		return "v" + strconv.FormatUint(uint64(v), 10)
+	}
+	n := 0
+	for _, g := range games {
+		if len(selected[g]) == 0 {
+			continue
+		}
+		s := g.Online(db)
+		if !s.Known || !s.NewerUpdate() && len(s.Missing) == 0 && len(s.Outdated) == 0 {
+			continue
+		}
+		var latest, released string
+		if s.NewerUpdate() {
+			latest, released = version(s.Latest.Version), s.Latest.Date
+		}
+		var missing, old []string
+		for _, id := range s.Missing {
+			missing = append(missing, fmt.Sprintf("%s [%016X]", dlcName(db, id), id))
+		}
+		for _, d := range s.Outdated {
+			old = append(old, fmt.Sprintf("%s [%016X] v%d → v%d", dlcName(db, d.ID), d.ID, d.Have, d.Latest.Version))
+		}
+		w.Write([]string{g.Title(), fmt.Sprintf("%016X", g.AppID), version(s.Have), latest, released,
+			strconv.Itoa(len(missing)), strings.Join(missing, "; "), strconv.Itoa(len(old)), strings.Join(old, "; ")})
+		n++
+	}
+	w.Flush()
+	return b.Bytes(), n
 }
 
 func dlcName(db *titledb.DB, id uint64) string {

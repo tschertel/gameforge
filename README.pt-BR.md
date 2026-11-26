@@ -21,8 +21,8 @@ Versão atual: **2.22.0**. [Download](#download) · [Guia completo](docs/GUIDE.p
 
 - **Junta** o jogo base, a atualização e os DLCs (NSP, NSZ ou XCI) num **arquivo só**.
 - **Comprime em NSZ** ao juntar, em geral de 30% a 50% menor. Os instaladores refazem os arquivos originais byte a byte. Também descomprime NSZ de volta para NSP.
-- **Verifica uma cópia**: calcula o hash de cada arquivo e compara com o que o pacote diz ter.
-- **Atualizações e DLCs ▾** compara os seus jogos com uma base de dados online e mostra que atualizações ou DLCs faltam.
+- **Verifica cópias**, uma ou a biblioteca inteira de uma vez: calcula o hash de cada arquivo e compara com o que o pacote diz ter.
+- **Atualizações e DLCs ▾** compara os seus jogos com uma base de dados online, mostra que atualizações ou DLCs faltam e pode salvar essa lista em CSV.
 - **Renomeia** os arquivos para `Nome [TitleID][vVersão].nsp`.
 
 Precisa do seu próprio `prod.keys` na pasta `keys`.

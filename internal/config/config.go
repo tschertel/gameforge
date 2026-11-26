@@ -65,6 +65,8 @@ type Config struct {
 	SevenZipDelete bool `json:"sevenzip_delete,omitempty"`
 	// SevenZipJobs is how many files the 7z tab compresses at a time (0: 1).
 	SevenZipJobs int `json:"sevenzip_jobs,omitempty"`
+	// SaveLog writes the log of each run to a file in the logs folder.
+	SaveLog bool `json:"save_log,omitempty"`
 	// ROMArchive is what the ROMs tab writes: "zip" for ZIP, else 7z.
 	ROMArchive string `json:"rom_archive,omitempty"`
 	// DupesKeep is the order of the extensions whose file is kept of the

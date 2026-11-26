@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
 
@@ -74,7 +75,9 @@ import (
 // renames and permanent deletes on Windows, 2.21.0 writes a report of the
 // games in a folder of console folders, 2.21.1 shows arcade sets in the
 // ROMs tab by their titles, 2.22.0 compresses ROMs to ZIP as well as 7z
-// and stops the descriptions from resizing the window on macOS.
+// and stops the descriptions from resizing the window on macOS; it also
+// checks many Switch backups at once, exports the missing updates and DLCs
+// to CSV and can save the log of each run.
 const appVersion = "2.22.0"
 
 // repoURL is the project's page, with the source code and the releases.
@@ -183,6 +186,15 @@ func (u *ui) showAbout() {
 	setTooltip(lists, T("upd.lists.tip"))
 	Grid(lists, Row(1), Column(0), Columnspan(3), Sticky("w"), Pady("2m 0"))
 	Grid(result, Row(2), Column(0), Columnspan(3), Sticky("w"), Pady("2m 0"))
+
+	// Saving the log of each run, for later review.
+	logVar := Variable(tclBool(u.cfg.SaveLog))
+	saveLog := f.TCheckbutton(Txt(T("opt.save_log")), logVar, Command(func() {
+		u.cfg.SaveLog = logVar.Get() == "1"
+		u.saveConfig()
+	}))
+	setTooltip(saveLog, T("opt.save_log.tip", filepath.Join(filepath.Dir(u.cfg.Path()), logsDirName)))
+	Grid(saveLog, Row(4), Column(0), Columnspan(2), Sticky("w"), Pady("3m 0"))
 
 	closeWin := func() {
 		tcl("grab", "release", path)

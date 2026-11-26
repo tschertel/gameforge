@@ -73,6 +73,7 @@ type ui struct {
 	cancelBtn   *TButtonWidget
 	addButtons  []*TButtonWidget
 	onlineBtn   *TMenubuttonWidget
+	checkBtn    *TMenubuttonWidget
 	dbStatus    *TLabelWidget // state of the game database
 	dbErr       error
 
@@ -98,6 +99,7 @@ type ui struct {
 	mu           sync.Mutex
 	pendingLog   []fmt.Stringer
 	logged       bool // something was logged since the log was last cleared
+	logStart     int  // the first line of logLines from the current run
 	pendingStat  *string
 	pendingProg  float64
 	progDirty    bool
@@ -498,17 +500,30 @@ func (u *ui) buildSwitchTab(tab *TFrameWidget) *TFrameWidget {
 		}
 		u.refreshList()
 	}))
-	checkBtn := actions.TButton(Txt(T("btn.check")), Command(func() {
+	// Check backups: files chosen in a dialog, or those checked in the list.
+	u.checkBtn = actions.TMenubutton(Txt(T("btn.check")))
+	checkBtn := u.checkBtn
+	checkMenu := checkBtn.Menu(Tearoff(false))
+	checkMenu.AddCommand(Lbl(T("check.files")), Command(func() {
 		types := []FileType{{TypeName: "Nintendo Switch NSP/NSZ/XCI", Extensions: gameExts}}
-		if p := u.openFile(types, "", true); p != "" {
-			u.startCheck(p)
+		u.startCheck(u.openFiles(types))
+	}))
+	checkMenu.AddCommand(Lbl(T("check.listed")), Command(func() {
+		if paths := u.checkedPaths(); len(paths) > 0 {
+			u.startCheck(paths)
+		} else {
+			u.logf("list.none_checked")
+			u.flush()
 		}
 	}))
+	checkBtn.Configure(Mnu(checkMenu))
+	setTooltip(checkBtn, T("backup.check.tip"))
 	// Online check and database download share one menu button, to keep
 	// the row narrow.
 	u.onlineBtn = actions.TMenubutton(Txt(T("btn.online_menu")))
 	onlineMenu := u.onlineBtn.Menu(Tearoff(false))
 	onlineMenu.AddCommand(Lbl(T("btn.online")), Command(u.checkOnline))
+	onlineMenu.AddCommand(Lbl(T("btn.online_export")), Command(u.exportMissing))
 	onlineMenu.AddCommand(Lbl(T("btn.update_db")), Command(func() { u.startDownloadDB(nil) }))
 	u.onlineBtn.Configure(Mnu(onlineMenu))
 	u.dbStatus = actions.TLabel()
@@ -519,7 +534,7 @@ func (u *ui) buildSwitchTab(tab *TFrameWidget) *TFrameWidget {
 	setTooltip(renameBtn, T("btn.rename.tip"))
 	gridRow(openDir, addFile, clearBtn, actions.TSeparator(Orient("vertical")), selDefault, selNone,
 		actions.TSeparator(Orient("vertical")), checkBtn, renameBtn, actions.TSeparator(Orient("vertical")), u.onlineBtn, u.dbStatus)
-	u.addButtons = []*TButtonWidget{openDir, addFile, clearBtn, keysBtn, selDefault, selNone, checkBtn, renameBtn}
+	u.addButtons = []*TButtonWidget{openDir, addFile, clearBtn, keysBtn, selDefault, selNone, renameBtn}
 
 	listFrame := tab.TFrame()
 	Grid(listFrame, Row(3), Column(0), Sticky("news"), pad)
@@ -1051,6 +1066,31 @@ func (u *ui) openFile(types []FileType, startDir string, remember bool) string {
 	return p
 }
 
+// saveFile asks where to save a file, offering name in the last folder
+// used; "" if cancelled.
+func (u *ui) saveFile(name string, types []FileType) string {
+	opts := []string{"-parent", ".", "-title", T("app.title"), "-filetypes", fileTypes(types),
+		"-initialfile", name, "-defaultextension", filepath.Ext(name)}
+	if u.cfg.LastDir != "" {
+		opts = append(opts, "-initialdir", u.cfg.LastDir)
+	}
+	cmd := "tk_getSaveFile"
+	if !nativeDialogs() {
+		cmd = "::tk::dialog::file::"
+		opts = append([]string{"save"}, opts...)
+		tcl("auto_load", cmd)
+		patchDialogs()
+	}
+	u.prepareDialog()
+	p := filepath.FromSlash(tcl(append([]string{cmd}, opts...)...))
+	u.rememberHidden()
+	if p != "" {
+		u.cfg.LastDir = filepath.Dir(p)
+		u.saveConfig()
+	}
+	return p
+}
+
 // openFolder asks for a folder, starting in and remembering the last one.
 // With input (a folder to add files from) the dialog has an "Include
 // subfolders" box, so Tk's own dialog is used: the system dialogs take no
@@ -1454,6 +1494,18 @@ func (u *ui) updateSummary() {
 }
 
 func (u *ui) setBusy(b bool) {
+	if b != u.busy && u.log != nil {
+		// A run starts or ends: what it logged goes to a file, if wanted.
+		u.flush()
+		if b {
+			u.logStart = len(u.logLines)
+		} else if u.cfg.SaveLog && u.logStart <= len(u.logLines) {
+			if err := saveRunLog(u.cfg.Path(), u.logLines[u.logStart:], time.Now()); err != nil {
+				u.logf("log.save_error", err)
+				u.flush()
+			}
+		}
+	}
 	u.busy = b
 	for _, btn := range u.addButtons {
 		enable(btn, !b)
@@ -1463,6 +1515,7 @@ func (u *ui) setBusy(b bool) {
 	enableCombo(u.themeBox, !b)
 	enable(u.verify, !b)
 	enable(u.onlineBtn, !b)
+	enable(u.checkBtn, !b)
 	enable(u.keysEntry, !b)
 	for _, t := range u.tabs {
 		t.setBusy(u, b)
@@ -1585,52 +1638,92 @@ func (u *ui) startMerge() {
 }
 
 // startCheck verifies an existing NSP or NSZ in the background.
-func (u *ui) startCheck(path string) {
-	if u.busy {
+// checkedPaths are the files checked in the Switch list, in list order.
+func (u *ui) checkedPaths() []string {
+	var paths []string
+	for _, n := range u.nsps {
+		if u.checked[n.Path] {
+			paths = append(paths, n.Path)
+		}
+	}
+	return paths
+}
+
+// startCheck checks backups one after the other; with more than one, a
+// summary at the end tells how many are intact and names the others.
+func (u *ui) startCheck(paths []string) {
+	if u.busy || len(paths) == 0 {
 		return
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	u.cancelMerge = cancel
 	u.setBusy(true)
 	enable(u.cancelBtn, true)
-	name := filepath.Base(path)
-	u.logf("check.start", name)
 	keys := u.keys
 
 	go func() {
 		defer u.recoverPanic()
 		defer cancel()
-		start := time.Now()
-		progress := func(done, total int64) {
-			u.setProgress(float64(done) / float64(max(total, 1)))
-			u.setStatus(T("status.checking", name, humanSize(done), humanSize(total)) + eta(start, done, total))
-		}
-		var res merge.CheckResult
-		var err error
-		hunks := -1
-		if strings.EqualFold(filepath.Ext(path), ".chd") {
-			hunks, err = chd.Verify(ctx, path, progress)
-		} else {
-			res, err = merge.Check(ctx, path, keys, progress, u.println)
-		}
+		var ok int
+		var bad []string
 		var result i18n.Message
-		var shaErr *chd.HeaderSHA1Error
-		switch {
-		case ctx.Err() != nil:
-			result = i18n.M("log.cancelled")
-		case errors.As(err, &shaErr):
-			result = i18n.M("check.chd_header_sha1", name, shaErr.Hunks,
-				hex.EncodeToString(shaErr.Stored[:]), hex.EncodeToString(shaErr.Actual[:]))
-		case err != nil:
-			result = i18n.M("log.merge_error", err)
-		case hunks >= 0:
-			result = i18n.M("check.chd_ok", name, hunks)
-		case res.Problems > 0:
-			result = i18n.M("check.failed", name, res.Problems)
-		default:
-			result = i18n.M("check.ok", name, res.NCAs)
+		for i, path := range paths {
+			if ctx.Err() != nil {
+				break
+			}
+			name := filepath.Base(path)
+			if len(paths) > 1 {
+				u.separate()
+				u.logf("check.start_n", name, i+1, len(paths))
+			} else {
+				u.logf("check.start", name)
+			}
+			start := time.Now()
+			progress := func(done, total int64) {
+				u.setProgress(float64(done) / float64(max(total, 1)))
+				u.setStatus(T("status.checking", name, humanSize(done), humanSize(total)) + eta(start, done, total))
+			}
+			var res merge.CheckResult
+			var err error
+			hunks := -1
+			if strings.EqualFold(filepath.Ext(path), ".chd") {
+				hunks, err = chd.Verify(ctx, path, progress)
+			} else {
+				res, err = merge.Check(ctx, path, keys, progress, u.println)
+			}
+			var shaErr *chd.HeaderSHA1Error
+			switch {
+			case ctx.Err() != nil:
+				result = i18n.M("log.cancelled")
+			case errors.As(err, &shaErr):
+				result = i18n.M("check.chd_header_sha1", name, shaErr.Hunks,
+					hex.EncodeToString(shaErr.Stored[:]), hex.EncodeToString(shaErr.Actual[:]))
+			case err != nil:
+				result = i18n.M("log.merge_error", err)
+			case hunks >= 0:
+				result = i18n.M("check.chd_ok", name, hunks)
+			case res.Problems > 0:
+				result = i18n.M("check.failed", name, res.Problems)
+			default:
+				result = i18n.M("check.ok", name, res.NCAs)
+			}
+			u.println(result)
+			switch {
+			case ctx.Err() != nil:
+			case err != nil || res.Problems > 0:
+				bad = append(bad, name)
+			default:
+				ok++
+			}
 		}
-		u.println(result)
+		if len(paths) > 1 {
+			u.separate()
+			result = i18n.M("check.summary", ok+len(bad), len(paths), ok, len(bad))
+			u.println(result)
+			for _, name := range bad {
+				u.logf("check.summary_bad", name)
+			}
+		}
 		u.setProgress(0)
 		u.setStatus(result.String())
 		onGUI(func() {

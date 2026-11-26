@@ -21,8 +21,8 @@ Current version: **2.22.0**. [Download](#download) · [Full guide](docs/GUIDE.md
 
 - **Merges** the base game, its update and its DLCs (NSP, NSZ or XCI) into **one file**.
 - **Compresses to NSZ** while merging, usually 30–50% smaller. Installers rebuild the original files byte for byte. It also decompresses NSZ back to NSP.
-- **Checks a backup**: every file is hashed and compared with what the package says it holds.
-- **Updates and DLCs ▾** compares your games with an online database, to tell which updates or DLCs are missing.
+- **Checks backups**, one or a whole library at a time: every file is hashed and compared with what the package says it holds.
+- **Updates and DLCs ▾** compares your games with an online database, to tell which updates or DLCs are missing, and can save that list as a CSV file.
 - **Renames** files to `Name [TitleID][vVersion].nsp`.
 
 It needs your own `prod.keys` in the `keys` folder.
