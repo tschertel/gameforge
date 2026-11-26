@@ -6,6 +6,7 @@
 
 [![Latest release](https://img.shields.io/github/v/release/tschertel/gameforge)](https://github.com/tschertel/gameforge/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/tschertel)
 
 ![The Nintendo Switch tab](docs/images/en/switch.png)
 
@@ -85,6 +86,12 @@ For Switch games, put your `prod.keys` in the `keys` folder next to the program.
 - **[Building from source](docs/GUIDE.md#building)**: Go, without a C compiler.
 - **[Changelog](CHANGELOG.md)**.
 - Developed with **[Ponytail](https://github.com/DietrichGebert/ponytail)**.
+
+## Support
+
+GameForge is free and will stay free. If it saved you time or disk space and you would like to say thanks, you can buy me a coffee:
+
+<a href="https://buymeacoffee.com/tschertel"><img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=&slug=tschertel&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" alt="Buy Me a Coffee" height="45"></a>
 
 ## License
 
