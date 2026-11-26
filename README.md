@@ -9,7 +9,7 @@
 
 ![The Nintendo Switch tab](docs/images/en/switch.png)
 
-Current version: **2.22.0**. [Download](#download) · [Full guide](docs/GUIDE.md) · [What's new](CHANGELOG.md)
+Current version: **2.23.0**. [Download](#download) · [Full guide](docs/GUIDE.md) · [What's new](CHANGELOG.md)
 
 > **New in 2.21: Collection report.** Point it at your `ROMS` folder and get one HTML page of all your games, by console, with search and filters. It shows the games you have on more than one console, such as *LEGO Star Wars II* on PS2, PSP, GBA and Xbox, or *Street Fighter Alpha 3* on CPS2 (`sfa3.zip`) and PS1. In the ROMs tab: **Check ▾ → Collection report**.
 
@@ -54,7 +54,7 @@ For PS1, PS2, PSP, Saturn, Sega CD, Dreamcast, GameCube, Wii, Xbox and more:
 ![The question about updating old lists](docs/images/en/lists-question.png)
 
 - **Keeps your lists fresh**: if you agree, the app looks at startup for the name lists you downloaded that have grown old and asks before updating them. Lists you never used are never downloaded.
-- **Tells you about new versions**, with a link at the top of the window. It asks first, and sends only the app's name and version.
+- **Tells you about new versions**, with a link at the top of the window. It asks first, and sends only the app's version and your system, which the project's server counts to know roughly how many people use the app ([what is sent and kept](server/README.md)).
 - **Remembers where you were**: each tab keeps its own output folder, and the last tab, the window size and the columns come back on the next start.
 - **Renames the RetroArch way**: saves, save states and thumbnails named after a game are renamed with it, and the `.m3u` playlists of games on several discs are updated.
 - **Shows your games**: icons of DS, PSP, GameCube and Xbox games and the labels of Dreamcast discs, right in the lists.

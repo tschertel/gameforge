@@ -2,18 +2,43 @@ package main
 
 import (
 	"context"
+	"runtime"
 	"slices"
 	"time"
 
 	. "modernc.org/tk9.0"
 
+	"gameforge/internal/config"
 	"gameforge/internal/update"
 )
 
-// The app can check on GitHub whether a newer version is out, daily (the
-// default), weekly or monthly: the user is asked once, and can change it
-// or check at once in the About window. Only the app's name and version
-// are sent; nothing is downloaded or installed.
+// The app can check whether a newer version is out, daily (the default),
+// weekly or monthly: the user is asked once, and can change it or check at
+// once in the About window. It asks the project's server, which counts the
+// check (server/README.md), else GitHub. Only the app's version and the
+// system are sent; nothing is downloaded or installed.
+
+// updateConsent is the version of the question about the check: 2 since
+// the check goes to the project's server and is counted. Who said yes to an
+// older question is asked again; who said no is not.
+const updateConsent = 2
+
+// updateQuestion is the question to ask about the check at startup, or ""
+// when it was answered: the first time, and again for whoever said yes to a
+// question older than updateConsent (whoever said no is not asked again).
+func updateQuestion(c *config.Config) string {
+	switch {
+	case c.UpdateCheck == nil:
+		return "upd.ask"
+	case *c.UpdateCheck && c.UpdateConsent < updateConsent:
+		return "upd.ask_again"
+	}
+	return ""
+}
+
+// updateDetail is the explanation of the check, with exactly what this
+// app sends.
+func updateDetail(key string) string { return T(key, appVersion, runtime.GOOS, runtime.GOARCH) }
 
 type updateInterval struct {
 	id    string
@@ -44,6 +69,7 @@ func (u *ui) updateChoice() int {
 func (u *ui) setUpdateChoice(i int) {
 	on := i > 0
 	u.cfg.UpdateCheck = &on
+	u.cfg.UpdateConsent = updateConsent // the choice's tooltip tells what is sent
 	if on {
 		u.cfg.UpdateEvery = updateIntervals[min(i, len(updateIntervals))-1].id
 		if u.cfg.UpdateEvery == "daily" {
@@ -62,11 +88,12 @@ func (u *ui) updateEvery() time.Duration {
 // startUpdateCheck asks the first time whether to check for new versions,
 // then checks if it is time to.
 func (u *ui) startUpdateCheck() {
-	if u.cfg.UpdateCheck == nil {
+	if question := updateQuestion(u.cfg); question != "" {
 		answer := MessageBox(Parent(App), Icon("question"), Type("yesno"), Title(T("app.title")),
-			Msg(T("upd.ask")), Detail(T("upd.ask.detail")))
+			Msg(T(question)), Detail(updateDetail("upd.ask.detail")))
 		on := answer == "yes"
 		u.cfg.UpdateCheck = &on
+		u.cfg.UpdateConsent = updateConsent
 		u.saveConfig()
 	}
 	if u.cfg.ListsCheck == nil {
@@ -92,7 +119,7 @@ func (u *ui) fetchUpdate(done func(update.Release, error)) {
 	u.cfg.UpdateChecked = time.Now()
 	u.saveConfig()
 	go func() {
-		r, err := update.Latest(context.Background(), "GameForge/"+appVersion)
+		r, err := update.Latest(context.Background(), appVersion)
 		onGUI(func() {
 			if err == nil {
 				u.cfg.UpdateLatest, u.cfg.UpdatePage = r.Version, r.Page

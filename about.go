@@ -77,8 +77,9 @@ import (
 // ROMs tab by their titles, 2.22.0 compresses ROMs to ZIP as well as 7z
 // and stops the descriptions from resizing the window on macOS; it also
 // checks many Switch backups at once, exports the missing updates and DLCs
-// to CSV and can save the log of each run.
-const appVersion = "2.22.0"
+// to CSV and can save the log of each run, 2.23.0 asks the project's server
+// for new versions, which counts the checks.
+const appVersion = "2.23.0"
 
 // repoURL is the project's page, with the source code and the releases.
 const repoURL = "https://github.com/tschertel/gameforge"
@@ -138,8 +139,8 @@ func (u *ui) showAbout() {
 		i, _ := strconv.Atoi(every.Current(nil))
 		u.setUpdateChoice(i)
 	}))
-	setTooltip(label, T("upd.option.tip"))
-	setTooltip(every, T("upd.option.tip"))
+	setTooltip(label, updateDetail("upd.option.tip"))
+	setTooltip(every, updateDetail("upd.option.tip"))
 	result := box.TLabel(Wraplength("110m"), Justify("left"))
 	showResult := func() {
 		if update.Newer(u.cfg.UpdateLatest, appVersion) {

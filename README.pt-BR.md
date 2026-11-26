@@ -9,7 +9,7 @@
 
 ![A aba Nintendo Switch](docs/images/pt-BR/switch.png)
 
-Versão atual: **2.22.0**. [Download](#download) · [Guia completo](docs/GUIDE.pt-BR.md) · [Novidades](CHANGELOG.md)
+Versão atual: **2.23.0**. [Download](#download) · [Guia completo](docs/GUIDE.pt-BR.md) · [Novidades](CHANGELOG.md)
 
 > **Novo na 2.21: Relatório da coleção.** Aponte para a sua pasta `ROMS` e receba uma página HTML com todos os seus jogos, por console, com pesquisa e filtros. Ela mostra os jogos que você tem em mais de um console, como *LEGO Star Wars II* no PS2, PSP, GBA e Xbox, ou *Street Fighter Alpha 3* no CPS2 (`sfa3.zip`) e no PS1. Na aba ROMs: **Verificar ▾ → Relatório da coleção**.
 
@@ -54,7 +54,7 @@ Para PS1, PS2, PSP, Saturn, Sega CD, Dreamcast, GameCube, Wii, Xbox e outros:
 ![A pergunta sobre atualizar listas velhas](docs/images/pt-BR/lists-question.png)
 
 - **Mantém as listas em dia**: se você aceitar, o app procura ao abrir as listas de nomes que você baixou e que ficaram velhas, e pergunta antes de atualizar. Listas que você nunca usou nunca são baixadas.
-- **Avisa de versões novas**, com um link no topo da janela. Pergunta antes, e envia só o nome e a versão do app.
+- **Avisa de versões novas**, com um link no topo da janela. Pergunta antes, e envia só a versão do app e o seu sistema, que o servidor do projeto conta para saber mais ou menos quantas pessoas usam o app ([o que é enviado e guardado](server/README.md)).
 - **Lembra onde você estava**: cada aba guarda a própria pasta de saída, e a última aba, o tamanho da janela e as colunas voltam na próxima vez.
 - **Renomeia do jeito do RetroArch**: saves, save states e capturas com o nome do jogo são renomeados junto, e as playlists `.m3u` de jogos com vários discos são atualizadas.
 - **Mostra os seus jogos**: ícones de jogos de DS, PSP, GameCube e Xbox e os rótulos dos discos de Dreamcast, direto nas listas.

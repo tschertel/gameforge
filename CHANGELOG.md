@@ -2,6 +2,11 @@
 
 All notable changes to GameForge. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/): the minor number grows with new features, the patch number with small fixes.
 
+## [2.23.0] - 2026-11-26
+
+### Changed
+- The check for new versions asks the project's own server (a Cloudflare Worker, whose code is in [`server/`](server/README.md)) instead of GitHub, and the server counts the checks per day, app version and system, to know roughly how many people use the app. It is sent the app's version, the system and the processor, nothing else; it keeps only those counts, not IP addresses. If it does not answer, the app asks GitHub as before. The question at startup says exactly what is sent and kept, and whoever turned the check on with an older version is asked again, once; whoever said no is not.
+
 ## [2.22.0] - 2026-11-26
 
 ### Added
@@ -301,6 +306,7 @@ All notable changes to GameForge. The format follows [Keep a Changelog](https://
 
 nspmerge: merging Nintendo Switch base games, updates and DLCs, with NSZ compression.
 
+[2.23.0]: https://github.com/tschertel/gameforge/releases/tag/v2.23.0
 [2.22.0]: https://github.com/tschertel/gameforge/releases/tag/v2.22.0
 [2.21.1]: https://github.com/tschertel/gameforge/releases/tag/v2.21.1
 [2.21.0]: https://github.com/tschertel/gameforge/releases/tag/v2.21.0

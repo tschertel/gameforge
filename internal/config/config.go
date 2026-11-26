@@ -80,6 +80,9 @@ type Config struct {
 	// UpdateCheck turns on the daily check for a new version on GitHub;
 	// nil until the user has been asked.
 	UpdateCheck *bool `json:"update_check,omitempty"`
+	// UpdateConsent is the version of the question about the check that was
+	// last answered (see updateConsent).
+	UpdateConsent int `json:"update_consent,omitempty"`
 	// UpdateEvery is how often the check runs: "daily" (the default when
 	// empty), "weekly" or "monthly".
 	UpdateEvery string `json:"update_every,omitempty"`

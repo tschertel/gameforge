@@ -35,3 +35,23 @@ func TestUpdateChoice(t *testing.T) {
 		}
 	}
 }
+
+// TestUpdateQuestion: asked the first time; asked again only by who said
+// yes before the check was counted, once.
+func TestUpdateQuestion(t *testing.T) {
+	yes, no := true, false
+	for _, c := range []struct {
+		cfg  config.Config
+		want string
+	}{
+		{config.Config{}, "upd.ask"},
+		{config.Config{UpdateCheck: &yes}, "upd.ask_again"},
+		{config.Config{UpdateCheck: &no}, ""},
+		{config.Config{UpdateCheck: &yes, UpdateConsent: updateConsent}, ""},
+		{config.Config{UpdateCheck: &no, UpdateConsent: updateConsent}, ""},
+	} {
+		if got := updateQuestion(&c.cfg); got != c.want {
+			t.Errorf("%+v: %q, want %q", c.cfg, got, c.want)
+		}
+	}
+}
