@@ -80,8 +80,9 @@ import (
 // to CSV and can save the log of each run, 2.23.0 asks the project's server
 // for new versions, which counts the checks, 2.23.1 fixes what an audit
 // found: checks lost on a format change, slow .bin folders, arcade titles
-// of the collection report and the CSV separator.
-const appVersion = "2.23.1"
+// of the collection report and the CSV separator, 2.23.2 writes the
+// details of ZIP files in the ROMs tab like those of 7z files.
+const appVersion = "2.23.2"
 
 // repoURL is the project's page, with the source code and the releases.
 const repoURL = "https://github.com/tschertel/gameforge"

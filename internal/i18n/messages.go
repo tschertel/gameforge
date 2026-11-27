@@ -1685,11 +1685,11 @@ var messages = map[string]msg{
 	},
 	"sz.row": {"%s", "%s", "%s", "%s", "%s"},
 	"sz.row_zip": {
-		"%d file(s), %s",
-		"%d arquivo(s), %s",
-		"%d Datei(en), %s",
-		"%d fichier(s), %s",
-		"%d archivo(s), %s",
+		"ZIP · %d file(s) · %s",
+		"ZIP · %d arquivo(s) · %s",
+		"ZIP · %d Datei(en) · %s",
+		"ZIP · %d fichier(s) · %s",
+		"ZIP · %d archivo(s) · %s",
 	},
 	"tools.menu": {
 		"Tools",

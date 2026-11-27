@@ -2,6 +2,11 @@
 
 All notable changes to GameForge. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/): the minor number grows with new features, the patch number with small fixes.
 
+## [Unreleased]
+
+### Fixed
+- The ROMs tab shows the details of a ZIP file like those of a 7z file (`ZIP · 1 file(s) · 25.44 MiB`), instead of with commas.
+
 ## [2.23.1] - 2026-11-26
 
 ### Fixed
