@@ -2,6 +2,13 @@
 
 All notable changes to GameForge. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/): the minor number grows with new features, the patch number with small fixes.
 
+## [2.23.5] - 2026-11-27
+
+### Fixed
+- The Discs tab reads the game of self-booting Dreamcast CD-Rs (DiscJuggler `.cdi` images and the CHDs made from them), whose first data track holds no game: the Platform and Details columns show it, as for other discs.
+- CHDs made by `chdman` with the Zstandard codecs (`cdzs` for CDs and GD-ROMs, `zstd` for DVDs) are read: before, listing, checking, extracting and the RetroAchievements check stopped with `unsupported codec "cdzs"`.
+- The RetroAchievements check reads Dreamcast CDs whose data track comes after audio tracks or a first session (for example, Sturmwind); before, it stopped with `sector … is outside track …`.
+
 ## [2.23.4] - 2026-11-27
 
 ### Fixed
@@ -336,6 +343,7 @@ All notable changes to GameForge. The format follows [Keep a Changelog](https://
 
 nspmerge: merging Nintendo Switch base games, updates and DLCs, with NSZ compression.
 
+[2.23.5]: https://github.com/tschertel/gameforge/releases/tag/v2.23.5
 [2.23.4]: https://github.com/tschertel/gameforge/releases/tag/v2.23.4
 [2.23.3]: https://github.com/tschertel/gameforge/releases/tag/v2.23.3
 [2.23.2]: https://github.com/tschertel/gameforge/releases/tag/v2.23.2
