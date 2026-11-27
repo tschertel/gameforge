@@ -221,3 +221,26 @@ func TestChdmanCompat(t *testing.T) {
 		})
 	}
 }
+
+// CHDs that chdman made with the zstd codecs (cdzs for CDs, zstd for
+// DVDs) are read and extracted like chdman's own extraction.
+func TestChdmanZstd(t *testing.T) {
+	tool := chdman(t)
+	dir := t.TempDir()
+	testDisc(t, dir, rand.New(rand.NewPCG(13, 14)))
+	for _, c := range []struct{ name, in, create, codecs string }{
+		{"cd", "multi.cue", "createcd", "cdzs"},
+		{"cdmix", "multi.cue", "createcd", "cdzs,cdfl"},
+		{"gdi", "disc.gdi", "createcd", "cdzs,cdfl"},
+		{"dvd", "dvd.iso", "createdvd", "zstd"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			in := filepath.Join(dir, c.in)
+			theirs := filepath.Join(dir, c.name+".chd")
+			run(t, tool, c.create, "-i", in, "-o", theirs, "-c", c.codecs)
+			if _, err := Verify(context.Background(), theirs, nil); err != nil {
+				t.Fatalf("reading chdman's CHD: %v", err)
+			}
+		})
+	}
+}

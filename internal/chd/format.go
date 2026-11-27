@@ -44,6 +44,8 @@ var (
 	codecCDLZMA = fourCC("cdlz")
 	codecCDFLAC = fourCC("cdfl")
 	codecFLAC   = fourCC("flac")
+	codecZstd   = fourCC("zstd")
+	codecCDZstd = fourCC("cdzs")
 	codecHuff   = fourCC("huff")
 
 	tagCDTrack = fourCC("CHT2")

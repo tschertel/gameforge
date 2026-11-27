@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/klauspost/compress/flate"
+	"github.com/klauspost/compress/zstd"
 	"github.com/ulikunitz/xz/lzma"
 )
 
@@ -274,7 +275,9 @@ func decompress(codec uint32, src, dst []byte) error {
 		return lzmaDecompress(src, dst, lzmaDictSize(len(dst)))
 	case codecZlib:
 		return inflate(src, dst)
-	case codecCDLZMA, codecCDZlib:
+	case codecZstd:
+		return zstdDecompress(src, dst)
+	case codecCDLZMA, codecCDZlib, codecCDZstd:
 		return decompressCD(codec, src, dst)
 	case codecCDFLAC:
 		return decompressCDFLAC(src, dst)
@@ -301,16 +304,22 @@ func decompressCD(codec uint32, src, dst []byte) error {
 	}
 	buf := make([]byte, frames*FrameSize)
 	sectors, subcode := buf[:frames*SectorSize], buf[frames*SectorSize:]
+	// cdzs keeps the subcode with zstd too; cdlz and cdzl with deflate.
+	sub := inflate
 	var err error
-	if codec == codecCDLZMA {
+	switch codec {
+	case codecCDLZMA:
 		err = lzmaDecompress(src[start:start+baseLen], sectors, lzmaDictSize(len(sectors)))
-	} else {
+	case codecCDZstd:
+		err = zstdDecompress(src[start:start+baseLen], sectors)
+		sub = zstdDecompress
+	default:
 		err = inflate(src[start:start+baseLen], sectors)
 	}
 	if err != nil {
 		return err
 	}
-	if err := inflate(src[start+baseLen:], subcode); err != nil {
+	if err := sub(src[start+baseLen:], subcode); err != nil {
 		return err
 	}
 	for f := range frames {
@@ -321,6 +330,22 @@ func decompressCD(codec uint32, src, dst []byte) error {
 			copy(frame, syncHeader[:])
 			eccGenerate(frame[:SectorSize])
 		}
+	}
+	return nil
+}
+
+// zstdDec decodes the zstd and cdzs codecs (MAME 0.249 and later); its
+// DecodeAll may be used by several goroutines at once.
+var zstdDec, _ = zstd.NewReader(nil, zstd.WithDecoderConcurrency(0), zstd.WithDecoderLowmem(true))
+
+// zstdDecompress decodes a zstd frame that must fill dst exactly.
+func zstdDecompress(src, dst []byte) error {
+	out, err := zstdDec.DecodeAll(src, dst[:0:len(dst)])
+	if err != nil {
+		return err
+	}
+	if len(out) != len(dst) || (len(out) > 0 && &out[0] != &dst[0]) {
+		return fmt.Errorf("chd: zstd hunk has %d bytes, want %d", len(out), len(dst))
 	}
 	return nil
 }
