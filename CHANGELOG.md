@@ -2,6 +2,16 @@
 
 All notable changes to GameForge. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/): the minor number grows with new features, the patch number with small fixes.
 
+## [2.23.4] - 2026-11-27
+
+### Fixed
+- On Linux, the columns of the lists fit their longest text again (Tk 9 gives a measure there that broke the fitting without a message), so long file names and platforms such as `Game Boy Advance` are no longer cut off. The Platform column widens too.
+- A damaged NSZ whose block count does not fit in the file is refused as invalid; before, the app could ask for gigabytes of memory and close.
+- Errors of the interface's Tcl commands are written to the terminal instead of being dropped.
+
+### Changed
+- The update server counts only checks of versions from 2.23.0 to the latest release, so made-up versions are not counted.
+
 ## [2.23.3] - 2026-11-27
 
 ### Changed
@@ -326,6 +336,7 @@ All notable changes to GameForge. The format follows [Keep a Changelog](https://
 
 nspmerge: merging Nintendo Switch base games, updates and DLCs, with NSZ compression.
 
+[2.23.4]: https://github.com/tschertel/gameforge/releases/tag/v2.23.4
 [2.23.3]: https://github.com/tschertel/gameforge/releases/tag/v2.23.3
 [2.23.2]: https://github.com/tschertel/gameforge/releases/tag/v2.23.2
 [2.23.1]: https://github.com/tschertel/gameforge/releases/tag/v2.23.1
