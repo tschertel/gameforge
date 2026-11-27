@@ -90,7 +90,9 @@ import (
 // to stderr, and a damaged NSZ block count is refused before it is read,
 // 2.23.5 reads the game of CDs whose first data track holds no game, as on
 // self-booting Dreamcast CD-Rs (CDI images and the CHDs made from them),
-// and reads CHDs made with MAME's zstd codecs (cdzs and zstd).
+// reads CHDs made with MAME's zstd codecs (cdzs and zstd), and checks
+// Dreamcast CDs whose data track follows audio tracks or a first session
+// against RetroAchievements.
 const appVersion = "2.23.5"
 
 // repoURL is the project's page, with the source code and the releases.

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"os"
@@ -83,7 +85,7 @@ func chdReader(path string) (retroach.Disc, func(), error) {
 		// The first data track holds the file system from sector 0.
 		for i := range d.Tracks {
 			if data(i) {
-				return retroach.Disc{Read: func(lba int64) ([]byte, error) { return d.ReadSector(i, int(lba)) }}, done, nil
+				return fileSystemDisc(func(rel int64) ([]byte, error) { return d.ReadSector(i, int(rel)) }), done, nil
 			}
 		}
 		done()
@@ -170,7 +172,7 @@ func cueReader(path string) (retroach.Disc, func(), error) {
 			_, err := f.ReadAt(b, start+lba*size+int64(skip))
 			return b, err
 		}
-		return retroach.Disc{Read: read}, func() { f.Close() }, nil
+		return fileSystemDisc(read), func() { f.Close() }, nil
 	}
 	return retroach.Disc{}, nil, errors.New("no data track")
 }
@@ -241,4 +243,32 @@ func raConsoleName(c int) string {
 		return fmt.Sprint(c)
 	}
 	return names[0]
+}
+
+// fileSystemDisc reads a CD by the addresses its file system uses, given
+// the sectors of its first data track. That track usually starts the
+// disc, but on a Dreamcast CD-R or MIL-CD it may follow audio tracks or a
+// first session, and its ISO 9660 file system then counts from the start
+// of the disc. The track's place is found from the root directory, whose
+// first record (".") holds the root's own address.
+func fileSystemDisc(read func(rel int64) ([]byte, error)) retroach.Disc {
+	pvd, err := read(16)
+	if err != nil || !bytes.HasPrefix(pvd, []byte("\x01CD001")) {
+		return retroach.Disc{Read: read}
+	}
+	root := int64(binary.LittleEndian.Uint32(pvd[158:]))
+	isRoot := func(rel int64) bool {
+		b, err := read(rel)
+		return err == nil && b[0] >= 34 && int64(binary.LittleEndian.Uint32(b[2:])) == root && b[32] == 1 && b[33] == 0
+	}
+	if root < 17 || isRoot(root) {
+		return retroach.Disc{Read: read}
+	}
+	for rel := int64(17); rel < min(root, 2000); rel++ {
+		if isRoot(rel) {
+			start := root - rel
+			return retroach.Disc{Start: start, Read: func(lba int64) ([]byte, error) { return read(lba - start) }}
+		}
+	}
+	return retroach.Disc{Read: read}
 }
