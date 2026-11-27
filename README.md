@@ -59,6 +59,7 @@ For PS1, PS2, PSP, Saturn, Sega CD, Dreamcast, GameCube, Wii, Xbox and more:
 - **Remembers where you were**: each tab keeps its own output folder, and the last tab, the window size and the columns come back on the next start.
 - **Renames the RetroArch way**: saves, save states and thumbnails named after a game are renamed with it, and the `.m3u` playlists of games on several discs are updated.
 - **Shows your games**: icons of DS, PSP, GameCube and Xbox games and the labels of Dreamcast discs, right in the lists.
+- **Keeps a log of each run**, if you want: the About window can save what each run writes to the log as a dated text file in a `logs` folder.
 - **Drag and drop** files or folders onto the window (Windows and Linux): each file goes to the tab of its format.
 
 ## Download

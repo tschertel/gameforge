@@ -59,6 +59,7 @@ Para PS1, PS2, PSP, Saturn, Sega CD, Dreamcast, GameCube, Wii, Xbox e outros:
 - **Lembra onde você estava**: cada aba guarda a própria pasta de saída, e a última aba, o tamanho da janela e as colunas voltam na próxima vez.
 - **Renomeia do jeito do RetroArch**: saves, save states e capturas com o nome do jogo são renomeados junto, e as playlists `.m3u` de jogos com vários discos são atualizadas.
 - **Mostra os seus jogos**: ícones de jogos de DS, PSP, GameCube e Xbox e os rótulos dos discos de Dreamcast, direto nas listas.
+- **Guarda o log de cada execução**, se você quiser: a janela Sobre pode salvar o que cada execução escreve no log num arquivo de texto com a data, na pasta `logs`.
 - **Arrastar e soltar** arquivos ou pastas na janela (Windows e Linux): cada arquivo vai para a aba do seu formato.
 
 ## Download
