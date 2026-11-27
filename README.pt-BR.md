@@ -10,7 +10,7 @@
 
 ![A aba Nintendo Switch](docs/images/pt-BR/switch.png)
 
-Versão atual: **2.23.3**. [Download](#download) · [Guia completo](docs/GUIDE.pt-BR.md) · [Novidades](CHANGELOG.md)
+Versão atual: **2.23.4**. [Download](#download) · [Guia completo](docs/GUIDE.pt-BR.md) · [Novidades](CHANGELOG.md)
 
 > **Novo na 2.21: Relatório da coleção.** Aponte para a sua pasta `ROMS` e receba uma página HTML com todos os seus jogos, por console, com pesquisa e filtros. Ela mostra os jogos que você tem em mais de um console, como *LEGO Star Wars II* no PS2, PSP, GBA e Xbox, ou *Street Fighter Alpha 3* no CPS2 (`sfa3.zip`) e no PS1. Na aba ROMs: **Verificar ▾ → Relatório da coleção**.
 

@@ -138,7 +138,7 @@ ttk::style theme create gameforgeDark -parent clam -settings {
 	// border color fits the dark theme.
 	line := image.NewRGBA(image.Rect(0, 0, 1, 1))
 	line.Set(0, 0, color.RGBA{0x45, 0x45, 0x45, 0xff})
-	eval.Eval(fmt.Sprintf(`ttk::style theme settings gameforgeDark {
+	evalTcl(fmt.Sprintf(`ttk::style theme settings gameforgeDark {
 	ttk::style element create Checkbutton.indicator image {%s {disabled selected} %s selected %s disabled %s} -sticky w
 	ttk::style element create Separator.separator image %s -sticky nswe -width 1 -height 1
 }`, off, disabledOn, on, disabled, NewPhoto(Data(line))))

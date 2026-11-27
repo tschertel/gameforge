@@ -35,4 +35,4 @@ FROM checks WHERE day >= date('now', '-30 days')
 GROUP BY version ORDER BY checks DESC;
 ```
 
-A check is counted each time an app looks for a new version: daily, weekly or monthly, as each user chose, and once more when someone clicks **Check now** in the About window. So the counts tell trends and shares, not exact numbers of people. Anyone can call the address, so the numbers can also be inflated on purpose; they are a guide, not a measurement.
+A check is counted each time an app looks for a new version: daily, weekly or monthly, as each user chose, and once more when someone clicks **Check now** in the About window. So the counts tell trends and shares, not exact numbers of people. Anyone can call the address, so the numbers can also be inflated on purpose; they are a guide, not a measurement. Only versions from 2.23.0 (the first that asks the Worker) up to the latest release are counted, so made-up versions add no rows.

@@ -10,7 +10,7 @@
 
 ![The Nintendo Switch tab](docs/images/en/switch.png)
 
-Current version: **2.23.3**. [Download](#download) · [Full guide](docs/GUIDE.md) · [What's new](CHANGELOG.md)
+Current version: **2.23.4**. [Download](#download) · [Full guide](docs/GUIDE.md) · [What's new](CHANGELOG.md)
 
 > **New in 2.21: Collection report.** Point it at your `ROMS` folder and get one HTML page of all your games, by console, with search and filters. It shows the games you have on more than one console, such as *LEGO Star Wars II* on PS2, PSP, GBA and Xbox, or *Street Fighter Alpha 3* on CPS2 (`sfa3.zip`) and PS1. In the ROMs tab: **Check ▾ → Collection report**.
 

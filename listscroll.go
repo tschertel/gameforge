@@ -2,7 +2,6 @@ package main
 
 import (
 	. "modernc.org/tk9.0"
-	"modernc.org/tk9.0/extensions/eval"
 )
 
 // The file lists scroll sideways: each column is kept at least as wide as
@@ -27,6 +26,7 @@ proc ::gameforge::fitColumns {tv} {
 	lassign [::gameforge::fonts] font heading
 	set indent [ttk::style lookup Treeview -indent]
 	if {$indent eq ""} {set indent 20}
+	set indent [winfo pixels $tv $indent] ;# Tk 9 may give "15p"
 	set pad [expr {[winfo pixels $tv 3m]}]
 	set cols [$tv cget -columns]
 	set w(#0) [expr {[font measure $heading [$tv heading #0 -text]] + $pad}]
@@ -52,12 +52,17 @@ proc ::gameforge::fitColumns {tv} {
 			lappend todo $id [expr {$depth + 1}]
 		}
 	}
-	foreach c [concat #0 $cols] {$tv column $c -minwidth $w($c)}
+	foreach c [concat #0 $cols] {
+		$tv column $c -minwidth $w($c)
+		# Tk widens only stretching columns to their minimum width.
+		if {[$tv column $c -width] < $w($c)} {$tv column $c -width $w($c)}
+	}
 }
 proc ::gameforge::growColumn {tv col text} {
 	lassign [::gameforge::fonts] font heading
 	set x [expr {[font measure $font $text] + [winfo pixels $tv 3m]}]
 	if {$x > [$tv column $col -minwidth]} {$tv column $col -minwidth $x}
+	if {$x > [$tv column $col -width]} {$tv column $col -width $x}
 }
 `
 
@@ -83,7 +88,7 @@ func scrolledTree(parent *TFrameWidget, opts ...Opt) *TTreeviewWidget {
 
 func defineListProcs() {
 	if !listProcsDefined {
-		eval.Eval(listProcs)
+		evalTcl(listProcs)
 		listProcsDefined = true
 	}
 }

@@ -101,7 +101,14 @@ func TestConvertAllJobs(t *testing.T) {
 		os.WriteFile(p, bytes.Repeat([]byte(fmt.Sprintf("ROM %d ", i)), 50_000+i*1000), 0o644)
 		paths = append(paths, p)
 	}
-	u := &ui{cfg: &config.Config{SevenZipJobs: 3}}
+	// The LZMA library rewrites global tables (with the same values) each
+	// time an encoder starts, which the race detector reports; with it on,
+	// the jobs write ZIPs, so that races of the app itself still show.
+	archive := ""
+	if raceEnabled {
+		archive = "zip"
+	}
+	u := &ui{cfg: &config.Config{SevenZipJobs: 3, ROMArchive: archive}}
 	sevenZip.ui = u
 	defer func() { sevenZip.ui = nil }()
 	tab := &convTab{conv: sevenZipConverter, checked: map[string]bool{}}
@@ -119,6 +126,14 @@ func TestConvertAllJobs(t *testing.T) {
 	for i, c := range done {
 		if c.item != tab.items[i] {
 			t.Errorf("result %d is %s", i, c.item.path)
+		}
+		if archive == "zip" {
+			if zr, err := zip.OpenReader(c.out); err != nil || len(zr.File) != 1 {
+				t.Errorf("%s: %v", c.out, err)
+			} else {
+				zr.Close()
+			}
+			continue
 		}
 		if _, err := sevenzip.Check(context.Background(), c.out, func(int64, int64) {}); err != nil {
 			t.Errorf("%s: %v", c.out, err)

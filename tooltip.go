@@ -1,9 +1,5 @@
 package main
 
-import (
-	"modernc.org/tk9.0/extensions/eval"
-)
-
 // Tooltips, drawn by Tcl: shown after a short delay while the pointer rests
 // on a widget, in the colors of the current theme (those of entry fields),
 // and kept on the screen.
@@ -49,7 +45,7 @@ proc ::tip::show {w} {
 `
 
 func initTooltips() {
-	eval.Eval(tooltipTcl)
+	evalTcl(tooltipTcl)
 }
 
 // setTooltip shows text while the pointer rests on w.

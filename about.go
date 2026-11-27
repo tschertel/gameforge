@@ -84,8 +84,11 @@ import (
 // details of ZIP files in the ROMs tab like those of 7z files, 2.23.3 shows
 // the console of the ROMs inside 7z and ZIP files in the Platform column,
 // the system of arcade sets, filters the RetroAchievements report and moves
-// its choice to the Check menu of the ROMs tab.
-const appVersion = "2.23.3"
+// its choice to the Check menu of the ROMs tab, 2.23.4 fits the list
+// columns to their longest text on Linux again (Tk 9 gives the indent with
+// a unit there) and widens the Platform column too; Tcl errors are written
+// to stderr, and a damaged NSZ block count is refused before it is read.
+const appVersion = "2.23.4"
 
 // repoURL is the project's page, with the source code and the releases.
 const repoURL = "https://github.com/tschertel/gameforge"

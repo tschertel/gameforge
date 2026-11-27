@@ -63,7 +63,7 @@ func decompressBlocks(ctx context.Context, r io.ReaderAt, p, end int64, sections
 	exp := hdr[11]
 	n := int64(binary.LittleEndian.Uint32(hdr[12:]))
 	total := int64(binary.LittleEndian.Uint64(hdr[16:]))
-	if exp < 14 || exp > 32 || n == 0 || (n-1)<<exp >= total || total > n<<exp {
+	if exp < 14 || exp > 32 || n == 0 || (n-1)<<exp >= total || total > n<<exp || p+24+4*n > end {
 		return i18n.Errorf("err.ncz.format")
 	}
 	list := make([]byte, 4*n)

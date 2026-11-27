@@ -123,7 +123,7 @@ func main() {
 	patchDialogs()
 	// Tk's own message boxes (Linux) are plain windows the window manager
 	// lets resize; like the native ones on Windows, they keep their size.
-	eval.Eval(`bind Dialog <Map> {+catch {wm resizable %W 0 0}}`)
+	evalTcl(`bind Dialog <Map> {+catch {wm resizable %W 0 0}}`)
 	initThemes()
 	initTooltips()
 
@@ -164,10 +164,21 @@ func main() {
 	}
 }
 
-// tcl evaluates a Tcl command built from words, quoted as needed.
+// tcl evaluates a Tcl command built from words, quoted as needed. An error
+// is written to stderr, so that a broken command does not go unnoticed.
 func tcl(words ...string) string {
-	r, _ := eval.Evalv(words...)
+	r, err := eval.Evalv(words...)
+	tclError(err)
 	return r
+}
+
+// evalTcl evaluates a Tcl script, writing an error to stderr.
+func evalTcl(script string) { _, err := eval.Eval(script); tclError(err) }
+
+func tclError(err error) {
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Tcl:", err)
+	}
 }
 
 // setTkLanguage makes Tk's own texts (the file dialogs it draws itself and
@@ -175,10 +186,10 @@ func tcl(words ...string) string {
 func setTkLanguage() {
 	tcl("::msgcat::mclocale", i18n.Current())
 	// Tk loaded its catalog for the previous locale at startup.
-	eval.Eval(`namespace eval ::tk {::msgcat::mcload [file join $::tk_library msgs]}`)
+	evalTcl(`namespace eval ::tk {::msgcat::mcload [file join $::tk_library msgs]}`)
 	// The "show hidden" box of the dialogs, which Tk translates only into
 	// German among the app's languages.
-	eval.Eval(`namespace eval ::tk {
+	evalTcl(`namespace eval ::tk {
 	foreach {lang files dirs} {
 		pt "Mostrar arquivos e pastas &ocultos" "Mostrar pastas &ocultas"
 		fr "Afficher les fichiers et dossiers &cachés" "Afficher les dossiers &cachés"
@@ -205,7 +216,7 @@ func setTkLanguage() {
 // On Windows the directory menu lists all drives: it only offered the
 // current path and its parents, so another drive could not be reached.
 func patchDialogs() {
-	eval.Eval(`
+	evalTcl(`
 foreach p {::tk::dialog::file::ListBrowse ::tk::dialog::file::chooseDir::OkCmd ::tk::dialog::file::Create} {
 	if {[info procs $p] eq ""} {auto_load $p}
 }
@@ -257,7 +268,7 @@ if {![string match *gameforge-subfolders* [info body ::tk::dialog::file::Create]
 	if runtime.GOOS != "windows" {
 		return
 	}
-	eval.Eval(`
+	evalTcl(`
 if {[info procs ::tk::dialog::file::Update] eq ""} {auto_load ::tk::dialog::file::Update}
 if {![string match *gameforge-drives* [info body ::tk::dialog::file::Update]]} {
 	catch {rename ::tk::dialog::file::UpdatePath {}}
@@ -440,7 +451,7 @@ func (u *ui) build() {
 	u.setBusy(u.busy)
 	if u.cfg.Divider > 0 {
 		// Once the window has its final size, or the position gets clamped.
-		eval.Eval(fmt.Sprintf("after 200 {catch {%s sashpos 0 %d}}", panes, u.cfg.Divider))
+		evalTcl(fmt.Sprintf("after 200 {catch {%s sashpos 0 %d}}", panes, u.cfg.Divider))
 	}
 }
 
@@ -1110,7 +1121,7 @@ func (u *ui) openFolder(input bool) string {
 	tcl("set", subfoldersBtnVar, tclBool(input))
 	tcl("set", subfoldersVar, tclBool(u.cfg.Subfolders))
 	tcl("set", subfoldersTextVar, T("opt.subfolders"))
-	eval.Eval(showSubfoldersTcl)
+	evalTcl(showSubfoldersTcl)
 	p := filepath.FromSlash(tcl(append([]string{cmd}, opts...)...))
 	u.rememberHidden()
 	if sub := tcl("set", subfoldersVar) == "1"; input && p != "" && sub != u.cfg.Subfolders {
@@ -1196,11 +1207,11 @@ func (u *ui) prepareDialog() {
 	// sources the file again even when it is loaded, which would undo
 	// patchDialogs (the drives in the folder menu on Windows), so only the
 	// first time.
-	eval.Eval(`if {[info procs ::tk::dialog::file::Update] eq ""} {auto_load ::tk::dialog::file::}`)
+	evalTcl(`if {[info procs ::tk::dialog::file::Update] eq ""} {auto_load ::tk::dialog::file::}`)
 	// Tk leaves out names starting with a dot only on Unix, where glob
 	// skips them; on Windows it lists them, and files with the hidden
 	// attribute too. Filter its listing the same way everywhere.
-	eval.Eval(hiddenFilterTcl)
+	evalTcl(hiddenFilterTcl)
 	tcl("set", "::tk::dialog::file::showHiddenBtn", "1")
 	tcl("set", "::tk::dialog::file::showHiddenVar", tclBool(u.cfg.ShowHidden))
 }
