@@ -21,7 +21,9 @@ The free plan is enough: 100,000 requests and 100,000 database writes a day.
 
 ## Reading the counts
 
-In the D1 **Console**:
+The page `https://gameforge.<your-subdomain>.workers.dev/stats?key=…` shows the totals (today, 7 days, 30 days, all), the checks per week and system, and the versions in use. The key is the Worker's secret `STATS_KEY` (**Settings → Variables and Secrets → Add → Secret**): any long random text, such as the output of `openssl rand -hex 24`. Without the secret, or with a wrong key, the page answers "Not found", like any unknown address.
+
+The same counts, in the D1 **Console**:
 
 ```sql
 -- Checks per week and system, the last eight weeks.
