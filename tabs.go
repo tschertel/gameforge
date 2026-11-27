@@ -14,6 +14,7 @@ import (
 
 	. "modernc.org/tk9.0"
 
+	"gameforge/internal/arcade"
 	"gameforge/internal/i18n"
 )
 
@@ -453,17 +454,35 @@ func stringOf(s fmt.Stringer) string {
 	return s.String()
 }
 
+// arcadeSet is the arcade set a ZIP or 7z of the ROMs tab is named after,
+// from the arcade lists, or nil.
+func (t *convTab) arcadeSet(u *ui, it *convItem) *arcade.Set {
+	name := filepath.Base(it.path)
+	if ext := extOf(name); t.conv.id != "7z" || (ext != ".zip" && ext != ".7z") {
+		return nil
+	}
+	return u.arcadeLists().Set(strings.TrimSuffix(name, filepath.Ext(name)))
+}
+
 // rowName is how the list shows a file: in the ROMs tab, an arcade set by
 // its title from the arcade lists, with the file name in brackets.
 func (t *convTab) rowName(u *ui, it *convItem) string {
 	name := filepath.Base(it.path)
-	if ext := extOf(name); t.conv.id != "7z" || (ext != ".zip" && ext != ".7z") {
-		return name
-	}
-	if s := u.arcadeLists().Set(strings.TrimSuffix(name, filepath.Ext(name))); s != nil && s.Title != "" {
+	if s := t.arcadeSet(u, it); s != nil && s.Title != "" {
 		return s.Title + " [" + name + "]"
 	}
 	return name
+}
+
+// rowPlatform is the Platform column: for an arcade set whose files tell
+// no console, its system from the arcade lists ("Arcade", "Naomi"…).
+func (t *convTab) rowPlatform(u *ui, it *convItem) string {
+	if it.platform == "ZIP" || it.platform == "7z" {
+		if s := t.arcadeSet(u, it); s != nil {
+			return s.System()
+		}
+	}
+	return it.platform
 }
 
 // refresh shows the list, keeping the scroll position, and updates the
@@ -485,7 +504,7 @@ func (t *convTab) refresh(u *ui) {
 	}
 	for i, it := range t.items {
 		it.id = fmt.Sprintf("c%d", i)
-		values := Values(tclList([]string{it.platform, stringOf(it.detail), stringOf(it.status)}))
+		values := Values(tclList([]string{t.rowPlatform(u, it), stringOf(it.detail), stringOf(it.status)}))
 		state := map[bool]int{true: 1, false: 0}[t.checked[it.path]]
 		if !markable(it) {
 			state = -1

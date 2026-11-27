@@ -31,6 +31,7 @@ func TestRAReport(t *testing.T) {
 		`<br><a href="https://retroachievements.org/game/123/hashes">`,     // another version: the hashes
 		`class="ok"`, `class="other"`, `class="bad"`, `class="skip"`,
 		" 1 ", " 4 ", // 1 of 4 recognized
+		`<option value="other bad skip">`, `data-t="b &lt;x&gt;.sfc tom &amp; jerry &lt;deluxe&gt;"`, // filter and search
 	} {
 		if !strings.Contains(html, want) {
 			t.Errorf("report lacks %q", want)

@@ -97,7 +97,12 @@ type raReportRow struct {
 	Game, GameURL          string
 	Versions, VersionsText string
 	Hash                   string
+	Search                 string // file and game, lower case, for the search box
 }
+
+// raFilter is a choice of the report's drop-down: the row classes it shows,
+// separated by spaces, or "" for all.
+type raFilter struct{ Value, Text string }
 
 var raReportTemplate = template.Must(template.New("report").Parse(`<!doctype html>
 <html lang="{{.Lang}}">
@@ -125,18 +130,42 @@ a { color: var(--link); }
 .other td.result { color: var(--other); }
 .bad td.result { color: var(--bad); }
 .skip td.result { color: var(--muted); }
+.filters { display: flex; flex-wrap: wrap; gap: .6em 1.2em; align-items: center; margin: 1em 0; }
+input[type=search], select { font: inherit; padding: .3em .5em; }
+input[type=search] { flex: 1 1 18em; }
 </style>
 </head>
 <body>
 <h1>{{.Title}}</h1>
 <p>{{.Checked}}</p>
 <p class="summary">{{.Summary}}</p>
+<div class="filters">
+<input type="search" id="q" placeholder="{{.SearchText}}" autofocus>
+<select id="f">{{range .Filters}}<option value="{{.Value}}">{{.Text}}</option>{{end}}</select>
+<span>{{.ShownText}} <b id="n"></b></span>
+</div>
 <table>
 <thead><tr><th>{{.FileHead}}</th><th>{{.ResultHead}}</th><th>{{.GameHead}}</th><th>Hash</th></tr></thead>
 <tbody>
-{{range .Rows}}<tr class="{{.Class}}"><td>{{.File}}</td><td class="result">{{.Result}}</td><td>{{if .GameURL}}<a href="{{.GameURL}}">{{.Game}}</a>{{else}}{{.Game}}{{end}}{{if .Versions}}<br><a href="{{.Versions}}">{{.VersionsText}}</a>{{end}}</td><td class="hash">{{.Hash}}</td></tr>
+{{range .Rows}}<tr class="{{.Class}}" data-t="{{.Search}}"><td>{{.File}}</td><td class="result">{{.Result}}</td><td>{{if .GameURL}}<a href="{{.GameURL}}">{{.Game}}</a>{{else}}{{.Game}}{{end}}{{if .Versions}}<br><a href="{{.Versions}}">{{.VersionsText}}</a>{{end}}</td><td class="hash">{{.Hash}}</td></tr>
 {{end}}</tbody>
 </table>
+<script>
+const q = document.getElementById("q"), f = document.getElementById("f");
+const rows = [...document.querySelectorAll("tbody tr")];
+function filter() {
+  const s = q.value.trim().toLowerCase();
+  let n = 0;
+  for (const r of rows) {
+    const show = (!s || r.dataset.t.includes(s)) && (!f.value || f.value.split(" ").includes(r.className));
+    r.hidden = !show;
+    if (show) n++;
+  }
+  document.getElementById("n").textContent = n;
+}
+for (const e of [q, f]) e.addEventListener("input", filter);
+filter();
+</script>
 </body>
 </html>
 `))
@@ -166,6 +195,7 @@ func raReportHTML(console string, rows []raRow, now time.Time) []byte {
 				row.Versions, row.VersionsText = retroach.HashesURL(g.ID), T("ra.report_versions")
 			}
 		}
+		row.Search = strings.ToLower(row.File + " " + row.Game)
 		out = append(out, row)
 	}
 	var b bytes.Buffer
@@ -177,7 +207,17 @@ func raReportHTML(console string, rows []raRow, now time.Time) []byte {
 		"FileHead":   T("list.file"),
 		"ResultHead": T("list.status"),
 		"GameHead":   T("ra.report_game"),
-		"Rows":       out,
+		"SearchText": T("ra.report_search"),
+		"ShownText":  T("coll.shown"),
+		"Filters": []raFilter{
+			{"", T("ra.report_all")},
+			{"other bad skip", T("ra.report_problems")},
+			{"other", T("ra.report_other")},
+			{"bad", T("ra.report_bad")},
+			{"skip", T("ra.report_skip")},
+			{"ok", T("ra.report_ok")},
+		},
+		"Rows": out,
 	})
 	if err != nil {
 		panic(err) // the template is fixed

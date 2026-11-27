@@ -233,6 +233,7 @@ var sevenZipConverter = &converter{
 		checkMenu := check.Menu(Tearoff(false))
 		// Three groups: RetroAchievements, duplicates, arcade sets.
 		checkMenu.AddCommand(Lbl(T("check.ra")), Command(inTab(func(t *convTab) { t.checkRA(u) })))
+		u.addRAReportItem(checkMenu)
 		checkMenu.AddSeparator()
 		checkMenu.AddCommand(Lbl(T("check.dupes")), Command(inTab(func(t *convTab) { t.findDupes(u, false) })))
 		checkMenu.AddCommand(Lbl(T("check.dupes_mark")), Command(inTab(func(t *convTab) { t.markDupes(u) })))
@@ -284,7 +285,6 @@ var sevenZipConverter = &converter{
 				u.askRAKey()
 			}
 		}))
-		u.addRAReportItem(menu)
 		dbBtn.Configure(Mnu(menu))
 		romDB.status = parent.TLabel(Wraplength("45m"), Justify("left"))
 		setTooltip(dbBtn, T("nointro.menu.tip"))
@@ -512,6 +512,20 @@ func ndsIconIn7z(path string) []byte {
 	return png
 }
 
+// platformOf names the consoles of the ROMs inside an archive, from their
+// extensions, joined by ", " when there are several; "" when none is known
+// (an arcade set, say).
+func platformOf(names []string) string {
+	var found []string
+	for _, n := range names {
+		ext := extOf(n)
+		if p := cmp.Or(romPlatforms[ext], nointro.SystemOf(ext)); p != "" && !slices.Contains(found, p) {
+			found = append(found, p)
+		}
+	}
+	return strings.Join(found, ", ")
+}
+
 // describeROM tells what a file of the ROMs tab is and whether it can be
 // compressed: a ROM or a ZIP can, a 7z is listed to be renamed and checked.
 func describeROM(it *convItem) {
@@ -535,12 +549,14 @@ func describeROM(it *convItem) {
 		if romZip() {
 			it.ok, it.infoOnly = true, false
 		}
-		n := 0
+		var names []string
 		for _, e := range entries {
 			if !e.Dir {
-				n++
+				names = append(names, e.Name)
 			}
 		}
+		n := len(names)
+		it.platform = cmp.Or(platformOf(names), it.platform)
 		it.detail = msg("sz.row_7z", n, size)
 		if hasNDS(entries) {
 			it.iconLater = func() []byte { return ndsIconIn7z(it.path) }
@@ -575,6 +591,11 @@ func describeROM(it *convItem) {
 		}
 	}
 	zr.Close()
+	names := make([]string, len(files))
+	for i, zf := range files {
+		names[i] = zf.Name
+	}
+	it.platform = cmp.Or(platformOf(names), it.platform)
 	// With ZIP chosen, a ZIP is already what it would become.
 	it.ok, it.infoOnly = !romZip(), romZip()
 	it.detail = msg("sz.row_zip", len(files), size)

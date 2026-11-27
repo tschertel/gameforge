@@ -157,6 +157,24 @@ func (db *DB) Set(name string) *Set {
 	return nil
 }
 
+// flycastSystems names the hardware of Flycast's games by the BIOS set
+// they need; the others (naomi, f355bios, hod2bios…) are Naomi games.
+var flycastSystems = map[string]string{"awbios": "Atomiswave", "naomi2": "Naomi 2", "segasp": "Sega System SP"}
+
+// System is what the set runs on, as the ROMs tab shows it: "Atomiswave",
+// "Naomi", "Naomi 2" or "Sega System SP" for Flycast's games, which need
+// a BIOS set, and "Arcade" for the others, as the lists do not name the
+// board.
+func (s *Set) System() string {
+	if len(s.Needs) == 0 {
+		return "Arcade"
+	}
+	if sys := flycastSystems[s.Needs[0]]; sys != "" {
+		return sys
+	}
+	return "Naomi"
+}
+
 // Load reads the cache file; the error wraps os.ErrNotExist if there is none.
 func Load(path string) (*DB, error) {
 	db := &DB{}

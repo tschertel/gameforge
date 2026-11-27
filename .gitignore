@@ -7,6 +7,7 @@ gameforge.json
 nspmerge.json
 titledb.cache*
 *.tmp
+logs/
 
 # Keys are personal: never publish them
 prod.keys

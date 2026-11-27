@@ -81,8 +81,11 @@ import (
 // for new versions, which counts the checks, 2.23.1 fixes what an audit
 // found: checks lost on a format change, slow .bin folders, arcade titles
 // of the collection report and the CSV separator, 2.23.2 writes the
-// details of ZIP files in the ROMs tab like those of 7z files.
-const appVersion = "2.23.2"
+// details of ZIP files in the ROMs tab like those of 7z files, 2.23.3 shows
+// the console of the ROMs inside 7z and ZIP files in the Platform column,
+// the system of arcade sets, filters the RetroAchievements report and moves
+// its choice to the Check menu of the ROMs tab.
+const appVersion = "2.23.3"
 
 // repoURL is the project's page, with the source code and the releases.
 const repoURL = "https://github.com/tschertel/gameforge"

@@ -316,3 +316,15 @@ func TestSetByName(t *testing.T) {
 		t.Fatal("found a set that is not there")
 	}
 }
+
+func TestSetSystem(t *testing.T) {
+	for needs, want := range map[string]string{"": "Arcade", "awbios": "Atomiswave", "naomi": "Naomi", "naomi2": "Naomi 2", "hod2bios": "Naomi", "segasp": "Sega System SP"} {
+		s := &Set{}
+		if needs != "" {
+			s.Needs = []string{needs}
+		}
+		if got := s.System(); got != want {
+			t.Errorf("System with %q = %q, want %q", needs, got, want)
+		}
+	}
+}

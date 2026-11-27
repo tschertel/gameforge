@@ -179,3 +179,20 @@ func TestIsROMFile(t *testing.T) {
 		t.Error("a .bin next to a new CUE sheet is still listed")
 	}
 }
+
+func TestPlatformOf(t *testing.T) {
+	for _, c := range []struct {
+		names []string
+		want  string
+	}{
+		{[]string{"Sonic (USA).md", "readme.txt"}, "Mega Drive"},
+		{[]string{"a/Game (USA).GBA"}, "Game Boy Advance"},
+		{[]string{"x.gb", "y.gbc", "z.gb"}, "Game Boy, Game Boy Color"},
+		{[]string{"epr-1.ic1", "mpr-2.bin"}, ""},
+		{nil, ""},
+	} {
+		if got := platformOf(c.names); got != c.want {
+			t.Errorf("platformOf(%q) = %q, want %q", c.names, got, c.want)
+		}
+	}
+}
