@@ -2,7 +2,7 @@
 
 All notable changes to GameForge. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/): the minor number grows with new features, the patch number with small fixes.
 
-## [Unreleased]
+## [2.23.2] - 2026-11-27
 
 ### Fixed
 - The ROMs tab shows the details of a ZIP file like those of a 7z file (`ZIP · 1 file(s) · 25.44 MiB`), instead of with commas.
@@ -319,6 +319,7 @@ All notable changes to GameForge. The format follows [Keep a Changelog](https://
 
 nspmerge: merging Nintendo Switch base games, updates and DLCs, with NSZ compression.
 
+[2.23.2]: https://github.com/tschertel/gameforge/releases/tag/v2.23.2
 [2.23.1]: https://github.com/tschertel/gameforge/releases/tag/v2.23.1
 [2.23.0]: https://github.com/tschertel/gameforge/releases/tag/v2.23.0
 [2.22.0]: https://github.com/tschertel/gameforge/releases/tag/v2.22.0
