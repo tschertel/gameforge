@@ -87,8 +87,10 @@ import (
 // its choice to the Check menu of the ROMs tab, 2.23.4 fits the list
 // columns to their longest text on Linux again (Tk 9 gives the indent with
 // a unit there) and widens the Platform column too; Tcl errors are written
-// to stderr, and a damaged NSZ block count is refused before it is read.
-const appVersion = "2.23.4"
+// to stderr, and a damaged NSZ block count is refused before it is read,
+// 2.23.5 reads the game of CDs whose first data track holds no game, as on
+// self-booting Dreamcast CD-Rs (CDI images and the CHDs made from them).
+const appVersion = "2.23.5"
 
 // repoURL is the project's page, with the source code and the releases.
 const repoURL = "https://github.com/tschertel/gameforge"

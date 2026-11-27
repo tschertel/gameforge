@@ -274,3 +274,32 @@ func TestInfoFromCHD(t *testing.T) {
 		t.Errorf("CHD from CUE: %+v (%v)", got, err)
 	}
 }
+
+// A self-booting Dreamcast CD-R with a data track holding no game in its
+// first session: the game is read from IP.BIN in the second session's
+// track, also through a CHD.
+func TestInfoFromCueDataData(t *testing.T) {
+	dir := t.TempDir()
+	ip := make([]byte, 2048)
+	put(ip, 0, "SEGA SEGAKATANA", 16)
+	put(ip, 0x40, "MK-51063", 10)
+	put(ip, 0x4A, "V1.008", 6)
+	put(ip, 0x80, "NBA2K1", 128)
+	game := append(ip, make([]byte, 2048*299)...)
+	os.WriteFile(filepath.Join(dir, "t1.iso"), make([]byte, 2048*300), 0o644)
+	os.WriteFile(filepath.Join(dir, "t2.iso"), game, 0o644)
+	cue := filepath.Join(dir, "dc.cue")
+	os.WriteFile(cue, []byte("FILE \"t1.iso\" BINARY\n  TRACK 01 MODE1/2048\n    INDEX 01 00:00:00\n"+
+		"FILE \"t2.iso\" BINARY\n  TRACK 02 MODE1/2048\n    INDEX 01 00:00:00\n"), 0o644)
+	got, err := InfoFromCue(cue)
+	if err != nil || got.Platform != Dreamcast || got.Serial != "MK-51063" || got.Title != "NBA2K1" {
+		t.Fatalf("CUE: %+v %v", got, err)
+	}
+	out := filepath.Join(dir, "dc.chd")
+	if _, err := chd.ConvertImage(context.Background(), cue, out, chd.Options{}); err != nil {
+		t.Fatal(err)
+	}
+	if got2, err := InfoFromCHD(out); err != nil || !reflect.DeepEqual(got2, got) {
+		t.Errorf("CHD: %+v %v, want %+v", got2, err, got)
+	}
+}

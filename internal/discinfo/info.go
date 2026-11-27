@@ -131,18 +131,11 @@ func InfoFromCue(path string) (Info, error) {
 		}
 		return dreamcastInfo(reader(tracks[2])), nil
 	}
-	for _, t := range tracks {
-		if read := reader(t); read != nil {
-			info := infoFrom(read)
-			if info.Platform == "" {
-				if b, err := read(1); err == nil && bytes.Contains(b[:256], []byte("PC Engine CD-ROM SYSTEM")) {
-					info.Platform = PCEngine
-				}
-			}
-			return info, nil
-		}
+	readers := make([]sectorReader, len(tracks))
+	for i, t := range tracks {
+		readers[i] = reader(t)
 	}
-	return Info{Platform: AudioCD}, nil
+	return infoFromTracks(readers), nil
 }
 
 // InfoFromCHD reads the game information of a CHD made from a disc image.
@@ -167,18 +160,43 @@ func InfoFromCHD(path string) (Info, error) {
 	if d.GDROM {
 		return dreamcastInfo(track(2)), nil
 	}
+	readers := make([]sectorReader, len(d.Tracks))
 	for i := range d.Tracks {
-		if read := track(i); read != nil {
-			info := infoFrom(read)
-			if info.Platform == "" {
-				if b, err := read(1); err == nil && bytes.Contains(b[:256], []byte("PC Engine CD-ROM SYSTEM")) {
-					info.Platform = PCEngine
-				}
+		readers[i] = track(i)
+	}
+	return infoFromTracks(readers), nil
+}
+
+// infoFromTracks reads the game information of a CD from its data tracks
+// (nil for audio tracks). The first track that tells the platform wins:
+// a self-booting Dreamcast CD-R often has a data track with no game in its
+// first session, and IP.BIN at the start of the second session's track,
+// maybe after a stored pregap.
+func infoFromTracks(readers []sectorReader) Info {
+	var first *Info
+	for _, read := range readers {
+		if read == nil {
+			continue
+		}
+		info := infoFrom(read)
+		if info.Platform == "" {
+			if b, err := read(1); err == nil && bytes.Contains(b[:256], []byte("PC Engine CD-ROM SYSTEM")) {
+				info.Platform = PCEngine
+			} else if dc, ok := findIPBin(read); ok {
+				info = dc
 			}
-			return info, nil
+		}
+		if info.Platform != "" {
+			return info
+		}
+		if first == nil {
+			first = &info
 		}
 	}
-	return Info{Platform: AudioCD}, nil
+	if first != nil {
+		return *first
+	}
+	return Info{Platform: AudioCD}
 }
 
 // infoFrom detects the platform of a data track and reads what the disc
@@ -205,21 +223,28 @@ func infoFrom(read sectorReader) Info {
 // GD-ROM. Where the track's data starts depends on how its pregap was
 // stored, so the first sectors are searched.
 func dreamcastInfo(read sectorReader) Info {
-	info := Info{Platform: Dreamcast}
 	if read == nil {
-		return info
+		return Info{Platform: Dreamcast}
 	}
+	info, _ := findIPBin(read)
+	info.Platform = Dreamcast
+	return info
+}
+
+// findIPBin looks for IP.BIN in the first sectors of a track.
+func findIPBin(read sectorReader) (Info, bool) {
 	for lba := 0; lba < 300; lba++ {
 		b, err := read(lba)
 		if err != nil {
 			break
 		}
 		if bytes.HasPrefix(b, []byte("SEGA SEGAKATANA")) {
+			info := Info{Platform: Dreamcast}
 			ipBinInfo(&info, b)
-			break
+			return info, true
 		}
 	}
-	return info
+	return Info{}, false
 }
 
 // text returns a fixed-size text field without padding, with runs of
