@@ -2,6 +2,13 @@
 
 All notable changes to GameForge. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/): the minor number grows with new features, the patch number with small fixes.
 
+## [2.23.3] - 2026-11-27
+
+### Changed
+- The **Platform** column of the ROMs tab shows the console of the ROMs inside 7z and ZIP files (`SNES`, `Mega Drive`…) instead of `7z` or `ZIP`. Arcade sets found in the downloaded arcade lists show `Arcade`, or `Naomi`, `Naomi 2`, `Atomiswave` or `Sega System SP` for Flycast's games.
+- The RetroAchievements report has a search box and a drop-down that shows only the files with problems (another version supported, version not recognized, not checked), one of those results, or the recognized ones.
+- In the ROMs tab, **Save an HTML report of each RetroAchievements check** moved from **Names database ▾** to **Check ▾**, under **RetroAchievements**.
+
 ## [2.23.2] - 2026-11-27
 
 ### Fixed
@@ -319,6 +326,7 @@ All notable changes to GameForge. The format follows [Keep a Changelog](https://
 
 nspmerge: merging Nintendo Switch base games, updates and DLCs, with NSZ compression.
 
+[2.23.3]: https://github.com/tschertel/gameforge/releases/tag/v2.23.3
 [2.23.2]: https://github.com/tschertel/gameforge/releases/tag/v2.23.2
 [2.23.1]: https://github.com/tschertel/gameforge/releases/tag/v2.23.1
 [2.23.0]: https://github.com/tschertel/gameforge/releases/tag/v2.23.0
