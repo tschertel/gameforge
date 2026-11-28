@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"hash"
+	"io"
 	"strings"
 )
 
@@ -19,6 +20,7 @@ const (
 	Saturn    = 39
 	Dreamcast = 40
 	PSP       = 41
+	GameCube  = 16
 )
 
 // DiscConsoles maps the platform names of disc images (as discinfo names
@@ -26,6 +28,7 @@ const (
 var DiscConsoles = map[string]int{
 	"PS1": PS1, "PS2": PS2, "PSP": PSP,
 	"Dreamcast": Dreamcast, "Saturn": Saturn, "Sega CD": SegaCD,
+	"GameCube": GameCube,
 }
 
 // Disc gives the disc hashes access to a disc's data.
@@ -244,4 +247,46 @@ func hashFile(h hash.Hash, d Disc, sector, size int64) error {
 		sector++
 	}
 	return nil
+}
+
+// HashGameCube computes the RetroAchievements hash of a GameCube disc
+// image, following rcheevos (rc_hash_nintendo_disc_partition): the disc
+// header with the apploader (at most 1 MiB), then the 18 segments of the
+// boot DOL. As in rcheevos, the segments are read at their offsets in the
+// DOL taken as offsets on the disc, so the hashes are the same.
+func HashGameCube(r io.ReaderAt) (string, error) {
+	const baseHeader, maxHeader, apploaderHeader = 0x2440, 1 << 20, 0x20
+	var b [8]byte
+	if _, err := r.ReadAt(b[:4], 0x1c); err != nil {
+		return "", err
+	}
+	if binary.BigEndian.Uint32(b[:4]) != 0xc2339f3d {
+		return "", errors.New("not a GameCube disc")
+	}
+	if _, err := r.ReadAt(b[:], baseHeader+0x14); err != nil {
+		return "", err
+	}
+	size := uint64(baseHeader+apploaderHeader) + uint64(binary.BigEndian.Uint32(b[:4])) + uint64(binary.BigEndian.Uint32(b[4:]))
+	head := make([]byte, min(size, maxHeader))
+	if _, err := r.ReadAt(head, 0); err != nil {
+		return "", err
+	}
+	h := md5.New()
+	h.Write(head)
+	dol := int64(binary.BigEndian.Uint32(head[0x420:]))
+	addr := make([]byte, 0xd8)
+	if _, err := r.ReadAt(addr, dol); err != nil {
+		return "", err
+	}
+	for i := range 18 {
+		off := int64(binary.BigEndian.Uint32(addr[4*i:]))
+		n := int64(binary.BigEndian.Uint32(addr[0x90+4*i:]))
+		if n == 0 {
+			continue
+		}
+		if _, err := io.CopyN(h, io.NewSectionReader(r, off, n), n); err != nil {
+			return "", fmt.Errorf("DOL segment %d: %w", i, err)
+		}
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
 }

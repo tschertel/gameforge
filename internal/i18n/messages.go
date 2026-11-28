@@ -3351,6 +3351,13 @@ var messages = map[string]msg{
 		"    %s : la console du disque est inconnue, non vérifié",
 		"    %s: la consola del disco es desconocida, no verificado",
 	},
+	"ra.gc_format": {
+		"GameCube discs are checked as ISO, GCM or RVZ",
+		"discos de GameCube são verificados como ISO, GCM ou RVZ",
+		"GameCube-Discs werden als ISO, GCM oder RVZ geprüft",
+		"les disques GameCube sont vérifiés en ISO, GCM ou RVZ",
+		"los discos de GameCube se verifican como ISO, GCM o RVZ",
+	},
 	"ra.skip_platform": {
 		"    %s: RetroAchievements is not checked for %s discs yet",
 		"    %s: o RetroAchievements ainda não é verificado em discos de %s",

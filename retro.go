@@ -16,7 +16,6 @@ import (
 
 	. "modernc.org/tk9.0"
 
-	"gameforge/internal/discinfo"
 	"gameforge/internal/nointro"
 	"gameforge/internal/retroach"
 	"gameforge/internal/sevenzip"
@@ -287,8 +286,9 @@ func (t *convTab) checkRADiscs(u *ui) {
 	}
 	var items []*convItem
 	for _, it := range t.items {
-		if (isCHD(it.path) || isISO(it.path) || isCSO(it.path) || isCDImage(it.path)) &&
-			!isXboxPlatform(it.platform) && it.platform != discinfo.GameCube && it.platform != discinfo.Wii {
+		// Wii discs are listed too, to say they are not checked yet.
+		if (isCHD(it.path) || isISO(it.path) || isCSO(it.path) || isCDImage(it.path) || isRVZ(it.path) ||
+			isWBFS(it.path) || hasExt(it.path, []string{".gcm"})) && !isXboxPlatform(it.platform) {
 			items = append(items, it)
 		}
 	}

@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"slices"
@@ -15,6 +16,7 @@ import (
 	"gameforge/internal/ciso"
 	"gameforge/internal/discinfo"
 	"gameforge/internal/retroach"
+	"gameforge/internal/rvz"
 )
 
 // gdHighDensity is where a GD-ROM's high-density area starts, and
@@ -213,12 +215,18 @@ func raDiscCheck(db *retroach.DB, it *convItem, console int) raOutcome {
 	case !db.Has(console):
 		return raSkip(msg("ra.st_nolist"), msg("ra.skip_nolist", base, it.platform))
 	}
-	d, done, err := discReader(it.path)
-	if err != nil {
-		return raSkip(msg("ra.st_error"), msg("drename.skip_error", base, err))
+	var hash string
+	var err error
+	if console == retroach.GameCube {
+		hash, err = gameCubeHash(it.path)
+	} else {
+		d, done, oerr := discReader(it.path)
+		if oerr != nil {
+			return raSkip(msg("ra.st_error"), msg("drename.skip_error", base, oerr))
+		}
+		hash, err = retroach.HashDisc(console, d)
+		done()
 	}
-	hash, err := retroach.HashDisc(console, d)
-	done()
 	if err != nil {
 		return raSkip(msg("ra.st_error"), msg("drename.skip_error", base, err))
 	}
@@ -271,4 +279,27 @@ func fileSystemDisc(read func(rel int64) ([]byte, error)) retroach.Disc {
 		}
 	}
 	return retroach.Disc{Read: read}
+}
+
+// gameCubeHash computes the RetroAchievements hash of a GameCube disc in
+// an ISO, GCM or RVZ file.
+func gameCubeHash(path string) (string, error) {
+	var r interface {
+		io.ReaderAt
+		io.Closer
+	}
+	var err error
+	switch {
+	case isRVZ(path):
+		r, err = rvz.Open(path)
+	case isISO(path) || hasExt(path, []string{".gcm"}):
+		r, err = os.Open(path)
+	default:
+		return "", errors.New(T("ra.gc_format"))
+	}
+	if err != nil {
+		return "", err
+	}
+	defer r.Close()
+	return retroach.HashGameCube(r)
 }

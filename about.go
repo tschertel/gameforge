@@ -92,8 +92,9 @@ import (
 // self-booting Dreamcast CD-Rs (CDI images and the CHDs made from them),
 // reads CHDs made with MAME's zstd codecs (cdzs and zstd), and checks
 // Dreamcast CDs whose data track follows audio tracks or a first session
-// against RetroAchievements.
-const appVersion = "2.23.5"
+// against RetroAchievements, 2.24.0 checks GameCube discs (ISO, GCM and
+// RVZ) against RetroAchievements.
+const appVersion = "2.24.0"
 
 // repoURL is the project's page, with the source code and the releases.
 const repoURL = "https://github.com/tschertel/gameforge"
