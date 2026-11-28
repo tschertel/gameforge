@@ -2298,6 +2298,13 @@ var messages = map[string]msg{
 		"Aucun fichier n'a besoin d'un nouveau nom (les raisons pour ceux qui gardent le leur sont dans le journal).",
 		"Ningún archivo necesita un nombre nuevo (el motivo de los que se quedan igual está en el registro).",
 	},
+	"drename.same": {
+		"    %s: already has the right name",
+		"    %s: já está com o nome certo",
+		"    %s: hat schon den richtigen Namen",
+		"    %s : a déjà le bon nom",
+		"    %s: ya tiene el nombre correcto",
+	},
 	"drename.skip_unknown": {
 		"    %s: code %s is not in the Redump database",
 		"    %s: o código %s não está na base do Redump",

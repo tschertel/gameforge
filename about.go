@@ -93,7 +93,8 @@ import (
 // reads CHDs made with MAME's zstd codecs (cdzs and zstd), and checks
 // Dreamcast CDs whose data track follows audio tracks or a first session
 // against RetroAchievements, 2.24.0 checks GameCube discs (ISO, GCM and
-// RVZ) against RetroAchievements.
+// RVZ) against RetroAchievements; Rename… says in the log which files
+// already have the right name.
 const appVersion = "2.24.0"
 
 // repoURL is the project's page, with the source code and the releases.

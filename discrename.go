@@ -247,7 +247,9 @@ func (t *convTab) planRenames(u *ui, items []*convItem) {
 			switch {
 			case skip != nil:
 				u.println(skip)
-			case newName != "" && newName != name:
+			case newName == name:
+				u.println(i18n.M("drename.same", name))
+			case newName != "":
 				plan = append(plan, discRename{it, filepath.Join(filepath.Dir(it.path), newName)})
 			}
 		}

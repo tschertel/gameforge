@@ -344,7 +344,9 @@ func (t *convTab) planRomRenames(u *ui, roms []romFile) {
 			switch {
 			case skip != nil:
 				u.println(skip)
-			case newName != "" && newName != name:
+			case newName == name:
+				u.println(i18n.M("drename.same", name))
+			case newName != "":
 				plan = append(plan, discRename{r.item, filepath.Join(filepath.Dir(r.item.path), newName)})
 			}
 		}
